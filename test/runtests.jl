@@ -114,6 +114,22 @@ using Test
         @test ph.Vdaughter[2:end] == L.Vdaughter                # real gens 1..N unchanged
     end
 
+    # ---- L2 reference: the two-step G1 reproduces Di Talia 2007 mother/daughter G1 ----
+    @testset "L2 — Di Talia two-step G1 (mother ~19, daughter ~45 min)" begin
+        Vstar, T_cln2, tau_bud = 36.0, 19.0, 52.0
+        # a mother is born already ≥ V* → only the Cln2 timer runs → G1 ≈ T_cln2
+        mom = cell_cycle(Vstar + 5; Vstar=Vstar, T_cln2=T_cln2, tau_bud=tau_bud)
+        @test isapprox(mom.G1, T_cln2; atol=1e-6)
+        # a daughter is born small → spends real time growing to V* → a longer G1 (~45 min)
+        Vdau = cell_cycle(Vstar; Vstar=Vstar, T_cln2=T_cln2, tau_bud=tau_bud).Vdaughter
+        dau = cell_cycle(Vdau; Vstar=Vstar, T_cln2=T_cln2, tau_bud=tau_bud)
+        @test 40.0 < dau.G1 < 50.0                       # Di Talia daughter G1 ≈ 45.5
+        @test dau.G1 > mom.G1                            # the asymmetry emerges, not imposed
+        # exponential growth gives the same qualitative split (a known-good rate function)
+        e = cell_cycle(20.0; Vstar=Vstar, rate=exponential_growth_rate(0.0077))
+        @test e.G1 > T_cln2
+    end
+
     # ---- L3: cross-source consistency — slope ordering is monotone in fold ----
     @testset "L3 — monotone slope vs control strength" begin
         slopes = [

@@ -29,6 +29,11 @@ export SizeControlRule,
     simulate_lineage,
     aging_daughter_fraction,
     simulate_aging_lineage,
+    qss_growth_rate,
+    exponential_growth_rate,
+    grow_to,
+    grow_for,
+    cell_cycle,
     size_control_slope,
     classify_control
 
@@ -169,7 +174,8 @@ division asymmetry ([`aging_daughter_fraction`](@ref)). Unlike [`simulate_lineag
 replicative age, the documented old-mother → larger-daughter relation (Kennedy 1994). The same fraction
 also governs the daughter's INHERITED DAMAGE (`Ddaughter`), so one age-eroding asymmetry
 drives both daughter size and fitness (larger AND shorter-lived old-mother daughters).
-The mother keeps the larger product and re-grows. Returns per-generation series.
+The mother keeps her cell body at division (monotonic, never shrinks); only the bud leaves.
+Returns per-generation series.
 """
 function simulate_aging_lineage(
     rule::SizeControlRule;
@@ -231,6 +237,79 @@ function simulate_aging_lineage(
         vm = d                                 # mother keeps her body -> next cycle's start
     end
     return (; gen, Vbirth, Vdivision, Vdaughter, Ddaughter, phantom)
+end
+
+# ---------------------------------------------------------------------------
+# Energetic single-cell growth + the two-step G1 (Di Talia 2007). With a sizer
+# threshold V*, the mother/daughter G1 durations EMERGE rather than being imposed.
+# ---------------------------------------------------------------------------
+# Surface-area-limited QSS growth (the course VOL_Growth law; Altenburg et al. 2019
+# constants), per minute: dV/dt = (k_up·4πr² − k_cons·V), r = (3V/4π)^(1/3).
+const _K_UP, _K_CONS, _C_ISS = 0.23, 0.27, 319.4
+function qss_growth_rate(V)
+    return 60.0 * (_K_UP * 4.0 * pi * (3.0 * V / (4.0 * pi))^(2 / 3) - _K_CONS * V) / _C_ISS
+end
+
+"""Exponential (biomass-driven) growth `dV/dt = μ·V` — the single-cell form measured by
+Di Talia 2007 / Sun 2010 (constant specific rate); pass `exponential_growth_rate(μ)` as the
+`rate` to [`cell_cycle`](@ref). μ ≈ 0.0077/min is a ~90-min doubling."""
+exponential_growth_rate(μ::Real) = V -> μ * V
+
+"""Grow `V` toward `target` under `rate(V)=dV/dt`; return `(minutes, V_reached)`."""
+function grow_to(
+    V::Real, target::Real; dt::Real=0.02, cap::Real=5000.0, rate=qss_growth_rate
+)
+    t = 0.0
+    V = float(V)
+    while V < target && t < cap
+        V += max(0.0, rate(V)) * dt
+        t += dt
+    end
+    return t, V
+end
+
+"""Grow `V` for `dur` minutes under `rate(V)=dV/dt`; return the final volume."""
+function grow_for(V::Real, dur::Real; dt::Real=0.02, rate=qss_growth_rate)
+    t = 0.0
+    V = float(V)
+    while t < dur
+        V += max(0.0, rate(V)) * dt
+        t += dt
+    end
+    return V
+end
+
+"""
+    cell_cycle(Vb; Vstar=40.0, T_cln2=19.0, tau_bud=70.0, bud_seed=2.0, rate=qss_growth_rate)
+
+One cell cycle from birth volume `Vb`. G1 is the inhibitor-dilution **sizer** step (time to
+grow `Vb → V*`, zero for a mother already ≥ V*) plus a fixed **Cln2 timer** step `T_cln2`
+(Di Talia 2007's two G1 modules); the budded phase is a size-invariant timer `tau_bud` during
+which the bud grows on its own geometry from `bud_seed`. So a mother (born ≥ V*) has
+G1 ≈ `T_cln2`, while a daughter (born small) spends extra time reaching V* — the
+mother/daughter G1 asymmetry EMERGES, it is not imposed. Returns the phase + size readout.
+"""
+function cell_cycle(
+    Vb::Real;
+    Vstar::Real=40.0,
+    T_cln2::Real=19.0,
+    tau_bud::Real=70.0,
+    bud_seed::Real=2.0,
+    rate=qss_growth_rate,
+)
+    t_sizer, _ = grow_to(Vb, Vstar; rate=rate)
+    G1 = t_sizer + T_cln2
+    Vstart = max(float(Vb), float(Vstar))
+    Vdaughter = grow_for(bud_seed, tau_bud; rate=rate)
+    return (;
+        G1,
+        budded=float(tau_bud),
+        cycle=G1 + tau_bud,
+        Vstart,
+        Vdiv=Vstart + Vdaughter,
+        Vdaughter,
+        Vmother=Vstart,
+    )
 end
 
 # ---------------------------------------------------------------------------

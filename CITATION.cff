@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+message: "If you use CellSizeControl.jl, please cite it."
+title: "CellSizeControl.jl: sizer/adder/timer primitives + the inhibitor-dilution sizer"
+authors:
+  - family-names: Segal
+    given-names: Daniel J.
+    email: dansegal2@gmail.com
+    orcid: "https://orcid.org/0009-0000-0000-0000"
+version: 0.1.0-dev
+license: MIT
+type: software
+keywords:
+  - cell size control
+  - sizer
+  - adder
+  - Whi5 dilution
+  - budding yeast
+references:
+  - type: article
+    authors:
+      - family-names: Soifer
+        given-names: Ilya
+      - family-names: Robert
+        given-names: Lydia
+      - family-names: Amir
+        given-names: Ariel
+    title: "Single-cell analysis of growth in budding yeast and bacteria reveals a common size regulation strategy"
+    year: 2016
+    journal: "Current Biology"
+  - type: article
+    authors:
+      - family-names: Schmoller
+        given-names: Kurt M.
+      - family-names: Turner
+        given-names: J. J.
+      - family-names: Kõivomägi
+        given-names: Mardo
+      - family-names: Skotheim
+        given-names: Jan M.
+    title: "Dilution of the cell cycle inhibitor Whi5 controls budding-yeast cell size"
+    year: 2015
+    journal: "Nature"

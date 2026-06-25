@@ -1,0 +1,20 @@
+{
+  "title": "cell-size-control: a minimal energetic model of budding-yeast cell-size control, asymmetric division, and replicative aging",
+  "description": "A self-contained Julia package (CellSizeControl.jl) and reproducible analysis for budding-yeast (Saccharomyces cerevisiae) cell-size control. It provides the sizer / adder / timer rules, the model-agnostic slope discriminator (Soifer, Robert & Amir 2016), the inhibitor-dilution sizer (Schmoller et al. 2015: Start at V* = W/[Whi5]*), and a maternal-age lineage model in which one age-eroding division asymmetry produces both the documented daughter-size increase and the inherited-damage (fitness) decline of old mothers (Kennedy 1994) across the replicative lifespan (Schnitzer 2022). The mother keeps her cell body at division (monotonic, never shrinks); the daughter is the bud, a rising fraction of the enlarging mother. Includes analytic / published-reference / cross-source tests and the reproducible figure pipeline.",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [
+    { "name": "Segal, Daniel J." },
+    { "name": "Klipp, Edda" }
+  ],
+  "keywords": [
+    "Saccharomyces cerevisiae",
+    "cell-size control",
+    "Whi5 dilution sizer",
+    "asymmetric cell division",
+    "replicative aging",
+    "budding yeast",
+    "cell cycle",
+    "Julia"
+  ]
+}

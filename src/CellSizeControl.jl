@@ -1,0 +1,262 @@
+"""
+    CellSizeControl
+
+Generic cell-size-control primitives: the sizer / adder / timer rules, the
+model-agnostic **slope discriminator** (Soifer, Robert & Amir 2016 — `Vd` vs `Vb`
+slope: timer→2, adder→1, sizer→0), and the budding-yeast **inhibitor-dilution
+sizer** (Schmoller, Turner, Kõivomägi & Skotheim 2015: Start at `V* = W/[Whi5]*`).
+
+Spun out of the yeast-wcm workshop (the cell-size-control module — Track-A class
+artifact + Track-B package). Self-contained (no domain deps): the size-control
+question — *what rule keeps a dividing population's size distribution stable?* —
+is generic. See `docs/THREE_LAYER.md` for the analytic/reference/cross-source
+testing and `../../docs/literature/AUDIT_NOTES.md` §4 for the source grounding.
+"""
+module CellSizeControl
+
+using Statistics: mean
+using Random: Random
+
+export SizeControlRule,
+    TimerRule,
+    AdderRule,
+    SizerRule,
+    InhibitorDilutionSizer,
+    SaturatingTimerRule,
+    division_volume,
+    setpoint_volume,
+    saturating_timer_buds,
+    simulate_lineage,
+    aging_daughter_fraction,
+    simulate_aging_lineage,
+    size_control_slope,
+    classify_control
+
+# ---------------------------------------------------------------------------
+# Control rules: given the birth volume Vb, the (deterministic) division volume.
+# ---------------------------------------------------------------------------
+abstract type SizeControlRule end
+
+"""Timer: divide after a fixed time → `Vd = fold·Vb` (fold = e^{αT}; =2 at doubling).
+Slope(Vd,Vb) = fold. A sub-doubling fold (<2) collapses a symmetric-division lineage."""
+struct TimerRule <: SizeControlRule
+    fold::Float64
+end
+
+"""Adder: add a fixed volume increment → `Vd = Vb + Δ`. Slope = 1 (the budding-yeast
+whole-cycle phenotype)."""
+struct AdderRule <: SizeControlRule
+    delta::Float64
+end
+
+"""Sizer: divide at a fixed target volume → `Vd = V*`. Slope = 0 (perfect size control)."""
+struct SizerRule <: SizeControlRule
+    Vstar::Float64
+end
+
+"""Inhibitor-dilution sizer (Schmoller 2015): a fixed amount `W` of a size-independent
+inhibitor (Whi5) dilutes as volume grows; Start fires at `[inhibitor] = W/V ≤ thresh`,
+i.e. `V* = W/thresh`. A mechanistic sizer."""
+struct InhibitorDilutionSizer <: SizeControlRule
+    W::Float64
+    thresh::Float64
+end
+
+"""Saturating timer (the course-model failure mode): a size-independent timer fires Start,
+and growth is a saturating increment `ΔV = g·(A − Vb)` toward a fixed asymptote `A`, so
+`Vd = Vb + g·(A − Vb)`. The bud (= the increment `ΔV`) then SHRINKS as the mother approaches
+`A` — the measured daughter-size drift (≈35%→5%) that an open-loop timer produces and a
+sizer fixes. (Absorbed from the yeast-wcm `CellSize.jl` A1 module.)"""
+struct SaturatingTimerRule <: SizeControlRule
+    g::Float64
+    asymptote::Float64
+end
+
+setpoint_volume(r::SizerRule) = r.Vstar
+setpoint_volume(r::InhibitorDilutionSizer) = r.W / r.thresh
+
+division_volume(r::TimerRule, Vb) = r.fold * Vb
+division_volume(r::AdderRule, Vb) = Vb + r.delta
+division_volume(r::SizerRule, Vb) = r.Vstar
+division_volume(r::InhibitorDilutionSizer, Vb) = setpoint_volume(r)
+division_volume(r::SaturatingTimerRule, Vb) = Vb + r.g * (r.asymptote - Vb)
+
+"""
+    saturating_timer_buds(rule::SaturatingTimerRule; V0, n) -> Vector{Float64}
+
+The bud (daughter) birth volumes for a saturating open-loop timer: the bud is the growth
+INCREMENT `ΔV = g·(A − V)` each cycle, which shrinks as the mother creeps toward `A`. This is
+the size-control failure the inhibitor-dilution sizer corrects; see [`InhibitorDilutionSizer`].
+"""
+function saturating_timer_buds(rule::SaturatingTimerRule; V0::Real=20.0, n::Int=8)
+    V = float(V0)
+    buds = Float64[]
+    for _ in 1:n
+        dV = rule.g * (rule.asymptote - V)
+        push!(buds, dV)
+        V += dV
+    end
+    return buds
+end
+
+# ---------------------------------------------------------------------------
+# Lineage simulation (symmetric or asymmetric division, multiplicative noise).
+# ---------------------------------------------------------------------------
+"""
+    simulate_lineage(rule; V0=1.0, n=400, cv=0.08, daughter_fraction=0.5, seed=1)
+        -> (; Vb, Vd)
+
+Follow one cell line for `n` generations: born at `Vb`, divide at a noisy
+`division_volume(rule, Vb)` (lognormal-ish, floored above `Vb` so it must grow),
+the tracked daughter is born at `daughter_fraction·Vd`. Returns the birth- and
+division-volume series for the size-control regression.
+"""
+function simulate_lineage(
+    rule::SizeControlRule;
+    V0::Real=1.0,
+    n::Int=400,
+    cv::Real=0.08,
+    daughter_fraction::Real=0.5,
+    seed::Int=1,
+)
+    rng = Random.MersenneTwister(seed)
+    Vb = Float64[]
+    Vd = Float64[]
+    v = float(V0)
+    for _ in 1:n
+        push!(Vb, v)
+        d = division_volume(rule, v) * (1 + cv * randn(rng))
+        d = max(d, v * 1.001)                 # division can't precede growth
+        push!(Vd, d)
+        v = daughter_fraction * d
+    end
+    return (; Vb, Vd)
+end
+
+# ---------------------------------------------------------------------------
+# Maternal-age asymmetry erosion (replicative aging): old mothers -> larger daughters.
+# ---------------------------------------------------------------------------
+"""
+    aging_daughter_fraction(age; alpha0=0.32, alpha_max=0.5, tau=10.0) -> Float64
+
+Maternal-age erosion of division asymmetry. A young mother divides strongly
+asymmetrically (the daughter inherits a small fraction `alpha0` of the division
+volume); as replicative `age` rises the asymmetry erodes toward symmetric division
+(`alpha_max`, ≈0.5), modeling the age-dependent loss of polarity/segregation control
+(Kennedy, Austriaco & Guarente 1994):
+`alpha(age) = alpha0 + (alpha_max - alpha0)·(1 - e^{-age/tau})`.
+"""
+function aging_daughter_fraction(
+    age::Real; alpha0::Real=0.32, alpha_max::Real=0.5, tau::Real=10.0
+)
+    return alpha0 + (alpha_max - alpha0) * (1 - exp(-age / tau))
+end
+
+"""
+    simulate_aging_lineage(rule; V0=5.0, n=25, alpha0=0.32, alpha_max=0.5, tau=10.0,
+                           enlarge_max=0.0, enlarge_tau=8.0, phantom_founder=false,
+                           cv=0.0, seed=1)
+        -> (; gen, Vbirth, Vdivision, Vdaughter, Ddaughter, phantom)
+
+`enlarge_max` adds the maternal-enlargement face: the division set-point rises with
+replicative age as `V*(a) = V*·(1 + enlarge_max·(1−e^(−a/enlarge_tau)))` (old mothers are
+larger; Kennedy 1994). With `enlarge_max=0` (default) the set-point is fixed and only the
+asymmetry erodes — the two faces (size + fitness) then come purely from `α(a)`.
+
+Follow ONE mother through `n` replicative divisions with a maternal-age-dependent
+division asymmetry ([`aging_daughter_fraction`](@ref)). Unlike [`simulate_lineage`](@ref)
+(a fixed daughter fraction), the daughter's birth volume RISES with the mother's
+replicative age, the documented old-mother → larger-daughter relation (Kennedy 1994). The same fraction
+also governs the daughter's INHERITED DAMAGE (`Ddaughter`), so one age-eroding asymmetry
+drives both daughter size and fitness (larger AND shorter-lived old-mother daughters).
+The mother keeps the larger product and re-grows. Returns per-generation series.
+"""
+function simulate_aging_lineage(
+    rule::SizeControlRule;
+    V0::Real=5.0,
+    n::Int=25,
+    alpha0::Real=0.32,
+    alpha_max::Real=0.5,
+    tau::Real=10.0,
+    damage_form::Real=1.0,
+    enlarge_max::Real=0.0,
+    enlarge_tau::Real=8.0,
+    phantom_founder::Bool=false,
+    cv::Real=0.0,
+    seed::Int=1,
+)
+    rng = Random.MersenneTwister(seed)
+    gen = Int[]
+    Vbirth = Float64[]
+    Vdivision = Float64[]
+    Vdaughter = Float64[]
+    Ddaughter = Float64[]
+    phantom = Bool[]
+    vm = float(V0)
+    dm = 0.0                                   # mother damage pool
+    if phantom_founder
+        # The founder is the only cell that would otherwise begin already as a mother body;
+        # every later cell is born as a daughter. Prepend her own birth (gen 0) as a daughter
+        # of a phantom mother (pristine: no inherited damage), so the lineage is uniform.
+        # The phantom mother's own birth/division volumes are undefined (NaN); the founder is
+        # born at V0. Off by default so the documented per-generation contract is unchanged.
+        push!(gen, 0)
+        push!(Vbirth, NaN)
+        push!(Vdivision, NaN)
+        push!(Vdaughter, float(V0))
+        push!(Ddaughter, 0.0)
+        push!(phantom, true)
+    end
+    for a in 0:(n - 1)
+        # maternal enlargement: the size set-point rises with replicative age (old mothers
+        # are larger; Kennedy 1994), V*(a) = V*·(1 + enlarge_max·(1−e^(−a/enlarge_tau))).
+        # enlarge_max=0 (default) keeps the fixed set-point -- the documented contract.
+        grow = 1.0 + enlarge_max * (1.0 - exp(-a / enlarge_tau))
+        d = division_volume(rule, vm) * grow * (1 + cv * randn(rng))
+        d = max(d, vm * 1.001)
+        frac = aging_daughter_fraction(a; alpha0=alpha0, alpha_max=alpha_max, tau=tau)
+        vdau = frac * d
+        # the SAME age-eroding fraction governs how much accrued damage the daughter
+        # inherits: young -> rejuvenated (low damage), old -> larger AND more damaged
+        # (Kennedy 1994). One function, two faces (size + fitness).
+        dm += damage_form
+        push!(gen, a + 1)
+        push!(Vbirth, vm)
+        push!(Vdivision, d)
+        push!(Vdaughter, vdau)
+        push!(Ddaughter, frac * dm)
+        push!(phantom, false)
+        vm = d - vdau                          # mother keeps the larger product
+    end
+    return (; gen, Vbirth, Vdivision, Vdaughter, Ddaughter, phantom)
+end
+
+# ---------------------------------------------------------------------------
+# The Soifer/Amir 2016 discriminator.
+# ---------------------------------------------------------------------------
+"""
+    size_control_slope(Vb, Vd) -> Float64
+
+Least-squares slope of division volume on birth volume. **timer → 2, adder → 1,
+sizer → 0** (symmetric division). The model-agnostic size-control classifier.
+"""
+function size_control_slope(Vb::AbstractVector, Vd::AbstractVector)
+    x = float.(Vb)
+    y = float.(Vd)
+    x̄ = mean(x)
+    return sum((x .- x̄) .* (y .- mean(y))) / sum(abs2, x .- x̄)
+end
+
+"""
+    classify_control(slope; atol=0.35) -> Symbol
+
+Map a `Vd`-vs-`Vb` slope to `:sizer` (0) / `:adder` (1) / `:timer` (2) / `:mixed`.
+"""
+function classify_control(slope::Real; atol::Real=0.35)
+    isapprox(slope, 0; atol=atol) && return :sizer
+    isapprox(slope, 1; atol=atol) && return :adder
+    isapprox(slope, 2; atol=atol) && return :timer
+    return :mixed
+end
+
+end # module

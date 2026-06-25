@@ -88,6 +88,11 @@ using Test
         @test enl.Vdivision[end] > 1.3 * enl.Vdivision[1]      # rises toward V*(1+0.45)
         @test all(isapprox.(flat.Vdivision, 60.0; atol=1e-6))  # enlarge_max=0 stays fixed
 
+        # the MOTHER NEVER SHRINKS at division (monotonic body) — the corrected accounting:
+        # she keeps her body, only the bud leaves, so the next cycle's birth = this division
+        @test issorted(enl.Vbirth)                             # mother at Start monotonic non-decreasing
+        @test enl.Vbirth[2:end] == enl.Vdivision[1:(end - 1)]  # division size carried over, no slice lost
+
         # phantom founder: prepend gen 0 = the founder's OWN birth (born at V0), so the
         # lineage is uniform (every cell born a daughter) without shifting the real gens
         ph = simulate_aging_lineage(

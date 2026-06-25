@@ -213,12 +213,14 @@ function simulate_aging_lineage(
         # enlarge_max=0 (default) keeps the fixed set-point -- the documented contract.
         grow = 1.0 + enlarge_max * (1.0 - exp(-a / enlarge_tau))
         d = division_volume(rule, vm) * grow * (1 + cv * randn(rng))
-        d = max(d, vm * 1.001)
+        d = max(d, vm)                         # d = mother body at division (never below vm: no shrink)
         frac = aging_daughter_fraction(a; alpha0=alpha0, alpha_max=alpha_max, tau=tau)
+        # CORRECT division accounting: the mother KEEPS her cell body (monotonic, never
+        # shrinks); the daughter is the BUD, a rising fraction `frac(a)` of the enlarging
+        # mother (bigger mother feeds a bigger bud => division gets less asymmetric, the
+        # Kennedy direction), NOT a slice carved out of the mother. The same `frac(a)` sets
+        # how much accrued damage the daughter inherits -- one mechanism, two faces.
         vdau = frac * d
-        # the SAME age-eroding fraction governs how much accrued damage the daughter
-        # inherits: young -> rejuvenated (low damage), old -> larger AND more damaged
-        # (Kennedy 1994). One function, two faces (size + fitness).
         dm += damage_form
         push!(gen, a + 1)
         push!(Vbirth, vm)
@@ -226,7 +228,7 @@ function simulate_aging_lineage(
         push!(Vdaughter, vdau)
         push!(Ddaughter, frac * dm)
         push!(phantom, false)
-        vm = d - vdau                          # mother keeps the larger product
+        vm = d                                 # mother keeps her body -> next cycle's start
     end
     return (; gen, Vbirth, Vdivision, Vdaughter, Ddaughter, phantom)
 end

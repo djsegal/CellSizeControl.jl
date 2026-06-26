@@ -29,7 +29,10 @@ end
 function main()
     open(joinpath(HERE, "whi5_dilution.csv"), "w") do io
         println(io, "cell,t,V,whi5_conc")
-        for (label, Vb) in (("daughter", 20.0), ("mother", 41.0))
+        # daughter born at Vb=30 dilutes to V*=40 in ~22 min (the sizer step; the
+        # 19-min CLN2 timer follows → ~41 min total daughter G1). mother born at Vb=41
+        # is already past V*, so ~0 sizer step and her G1 is the 19-min timer only.
+        for (label, Vb) in (("daughter", 30.0), ("mother", 41.0))
             ts, vs, cs = dilute_to_start(Vb)
             for (t, v, c) in zip(ts, vs, cs)
                 println(

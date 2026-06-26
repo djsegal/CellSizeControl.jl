@@ -40,15 +40,37 @@ def main():
     fig.suptitle("Inhibitor (Whi5) dilution sets Start at a critical size", y=0.99,
                  fontsize=12)
 
+    # Each cell's sizer step is its Whi5-dilution time; the fixed 19-min CLN2 timer
+    # follows Start, so the total two-step G1 is the sizer step + 19 min.
+    T_CLN2 = 19.0
+    lbl = {
+        "daughter": "Daughter: ~{step:.0f} min sizer step",
+        "mother": "Mother: ~{step:.0f} min sizer step (born past $V^\\ast$)",
+    }
     for c in ("daughter", "mother"):
-        g1 = t[c][-1]
+        step = t[c][-1]
         axA.plot(t[c], C[c], "-", lw=2.4, color=col[c],
-                 label=f"{c.capitalize()} (G1 sizer step {g1:.0f} min)")
+                 label=lbl[c].format(step=step))
         axA.plot([t[c][-1]], [C[c][-1]], "o", ms=7, color=col[c], zorder=5)
     axA.axhline(THRESH, color=VERM, lw=1.8, ls="--", label=r"Start threshold $\theta$")
     axA.set(xlabel="Time in G1 (min)", ylabel=r"Inhibitor concentration $[W]=W/V$",
             title="(a) Whi5 dilutes to the Start threshold")
     axA.legend(loc="upper right", frameon=False, fontsize=9)
+
+    # Spell out the two-step G1 for each cell: sizer step + 19-min CLN2 timer.
+    d_step, m_step = t["daughter"][-1], t["mother"][-1]
+    axA.annotate(
+        f"+ 19 min CLN2 timer\n→ ~{d_step + T_CLN2:.0f} min total G1",
+        xy=(d_step, THRESH), xycoords="data",
+        xytext=(0.50, 0.55), textcoords="axes fraction",
+        fontsize=8.5, color=col["daughter"], ha="left", va="center",
+        arrowprops=dict(arrowstyle="->", color=col["daughter"], lw=1.0))
+    axA.annotate(
+        f"+ 19 min CLN2 timer\n→ ~{m_step + T_CLN2:.0f} min total G1 (timer only)",
+        xy=(m_step, THRESH), xycoords="data",
+        xytext=(0.07, 0.22), textcoords="axes fraction",
+        fontsize=8.5, color=col["mother"], ha="left", va="center",
+        arrowprops=dict(arrowstyle="->", color=col["mother"], lw=1.0))
 
     for c in ("daughter", "mother"):
         axB.plot(t[c], V[c], "-", lw=2.4, color=col[c])

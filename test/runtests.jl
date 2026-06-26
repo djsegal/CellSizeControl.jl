@@ -150,6 +150,36 @@ using JET
         @test ph.Vdaughter[2:end] == L.Vdaughter                # real gens 1..N unchanged
     end
 
+    # ---- AGE-2: the replicative lifespan EMERGES from autocatalytic damage + a threshold ----
+    @testset "emergent replicative lifespan (AGE-2)" begin
+        # deterministic limit (no per-division noise, no cell-to-cell spread) → a fixed RLS
+        r1 = replicative_lifespan(; cv=0.0, crit_cv=0.0, seed=1)
+        r2 = replicative_lifespan(; cv=0.0, crit_cv=0.0, seed=99)
+        @test r1 == r2 && r1 > 0                                 # seed-independent + finite
+
+        # monotonic in the mechanism: higher viability threshold → longer life; faster
+        # autocatalysis (kappa) → shorter life (the senescence accelerator)
+        lo = replicative_lifespan(; D_crit=20.0, cv=0.0, crit_cv=0.0)
+        hi = replicative_lifespan(; D_crit=40.0, cv=0.0, crit_cv=0.0)
+        @test hi > lo
+        slow = replicative_lifespan(; kappa=0.05, cv=0.0, crit_cv=0.0)
+        fast = replicative_lifespan(; kappa=0.30, cv=0.0, crit_cv=0.0)
+        @test slow > fast
+
+        # a mother that segregates damage to her bud outlives one that keeps all of it
+        @test replicative_lifespan(; segregate=true, cv=0.0, crit_cv=0.0) >
+            replicative_lifespan(; segregate=false, cv=0.0, crit_cv=0.0)
+
+        # Schnitzer 2022 calibration: the DEFAULT distribution has mean ≈ 25 and CV ≈ 0.3
+        s = lifespan_distribution(3000)
+        m = sum(s) / length(s)
+        sd = sqrt(sum((x - m)^2 for x in s) / (length(s) - 1))
+        @test 22.0 < m < 28.0                                   # mean RLS in the budding-yeast range
+        @test 0.22 < sd / m < 0.40                              # realistic spread (cell-to-cell)
+        @test all(>(0), s)                                      # every cell divides at least once
+        @test length(lifespan_distribution(50)) == 50
+    end
+
     # ---- lineage timecourse: the mother is monotonic (never shrinks) over the lifespan ----
     @testset "lineage_timecourse — monotonic mother, buds detach" begin
         tc = lineage_timecourse(; n_max=29)

@@ -29,6 +29,8 @@ export SizeControlRule,
     simulate_lineage,
     aging_daughter_fraction,
     simulate_aging_lineage,
+    replicative_lifespan,
+    lifespan_distribution,
     qss_growth_rate,
     exponential_growth_rate,
     grow_to,
@@ -238,6 +240,72 @@ function simulate_aging_lineage(
         vm = d                                 # mother keeps her body -> next cycle's start
     end
     return (; gen, Vbirth, Vdivision, Vdaughter, Ddaughter, phantom)
+end
+
+# ---------------------------------------------------------------------------
+# Emergent replicative lifespan from an autocatalytic-damage + viability threshold.
+# Replaces a hard-coded generation cap with a lifespan that EMERGES from the dynamics.
+# ---------------------------------------------------------------------------
+"""
+    replicative_lifespan(; D_crit=32.0, crit_cv=0.55, production=1.0, kappa=0.10, cv=0.05,
+                         alpha0=0.32, alpha_max=0.5, tau=10.0, segregate=true,
+                         seed=1, max_gen=500) -> Int
+
+The replicative lifespan (number of divisions before senescence) emerging from accumulating
+damage rather than being imposed. Each division adds damage that is **autocatalytic** — the
+production rate rises with the damage already present, `P(D)=production·(1+kappa·D)` (degraded
+proteostasis begets more damage; Lindner 2008, Hughes & Gottschling 2012) — and the mother
+**retains the share she does not segregate** to the bud, `1 - r(a)`, where `r(a)` is the same
+age-eroding division asymmetry that drives daughter size and inherited damage
+([`aging_daughter_fraction`](@ref); `segregate=false` makes the mother keep all of it). The
+mother senesces when her retained damage `D` crosses her viability threshold; the returned
+generation count is the RLS. Because production is autocatalytic, `D` accelerates and the
+lifespan is finite.
+
+The RLS distribution is set mostly by **cell-to-cell heterogeneity** (`crit_cv`, a lognormal
+spread in the threshold `D_crit` across cells) rather than the small per-division noise `cv`:
+the autocatalytic blow-up synchronizes the threshold crossing, so per-division noise alone gives
+an unrealistically tight distribution. With the default parameters the mean and spread calibrate
+to the measured budding-yeast RLS (mean ≈ 25 divisions, CV ≈ 0.3; Schnitzer 2022) — the
+threshold/heterogeneity are illustrative, chosen to reproduce that target, not fit per-cell.
+"""
+function replicative_lifespan(;
+    D_crit::Real=32.0,
+    crit_cv::Real=0.55,
+    production::Real=1.0,
+    kappa::Real=0.10,
+    cv::Real=0.05,
+    alpha0::Real=0.32,
+    alpha_max::Real=0.5,
+    tau::Real=10.0,
+    segregate::Bool=true,
+    seed::Int=1,
+    max_gen::Int=500,
+)
+    rng = Random.MersenneTwister(seed)
+    # cell-to-cell heterogeneity: this cell's own viability threshold (lognormal, mean D_crit)
+    Dc = crit_cv > 0 ? D_crit * exp(crit_cv * randn(rng) - crit_cv^2 / 2) : float(D_crit)
+    D = 0.0
+    a = 0
+    while D < Dc && a < max_gen
+        frac = aging_daughter_fraction(a; alpha0=alpha0, alpha_max=alpha_max, tau=tau)
+        kept = segregate ? (1 - frac) : 1.0     # the share the mother does NOT pass to the bud
+        noise = cv > 0 ? (1 + cv * randn(rng)) : 1.0
+        D += kept * production * (1 + kappa * D) * max(0.0, noise)   # autocatalytic damage
+        a += 1
+    end
+    return a
+end
+
+"""
+    lifespan_distribution(n; seed0=1, kwargs...) -> Vector{Int}
+
+`n` independent replicative-lifespan samples (distinct seeds), forwarding `kwargs` to
+[`replicative_lifespan`](@ref). The distribution (mean + spread) is what calibrates the
+damage model to a measured RLS distribution (Schnitzer 2022).
+"""
+function lifespan_distribution(n::Int; seed0::Int=1, kwargs...)
+    return [replicative_lifespan(; seed=seed0 + i - 1, kwargs...) for i in 1:n]
 end
 
 # ---------------------------------------------------------------------------

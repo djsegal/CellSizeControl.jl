@@ -36,7 +36,7 @@ const slope = size_control_slope
 # near death; Cdc42 polarity loss, Kennedy 1994). ONE age function then makes late
 # daughters LARGER -- the size face of the same asymmetry erosion as AGE-3's damage face.
 function mother_lineage(;
-    n_max=39,
+    n_max=29,                         # 30 generations = the budding-yeast replicative lifespan (~25-30; Schnitzer 2022)
     Vstar0=36.0,
     T_cln2=19.0,
     tau_bud=52.0,  # n_max+1 gens ≈ yeast RLS (~25-30 divisions; Schnitzer 2022)

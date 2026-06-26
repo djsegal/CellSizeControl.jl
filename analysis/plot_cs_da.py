@@ -22,8 +22,10 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from scipy.optimize import curve_fit
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
-MOTHER, DAUGHTER, CYCLE = "#0072b2", "#d55e00", "#009e73"  # Okabe-Ito
+MOTHER, DAUGHTER, CYCLE = BLUE, VERM, GREEN  # Okabe-Ito
 
 
 def _r2(y, yhat):
@@ -48,23 +50,22 @@ def main():
             cyc.append(float(row["cycle"]))
     gen = np.array(gen, float)
 
-    plt.rcParams.update({"font.size": 10, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11.5, 4.6))
-    fig.suptitle("Maternal-Age Phenomenology Across the Replicative Lifespan "
-                 "(Energetic Cell-Size Model)", y=0.99, fontsize=12.5)
+    fig.suptitle("Maternal-age phenomenology across the replicative lifespan "
+                 "(energetic cell-size model)", y=0.99, fontsize=12.5)
 
     # (a) size: mother + daughter, curves only (fit-by-mechanism), Okabe-Ito
     xm, ym, _, _ = single_exp(gen, mom)
     xd, yd, _, _ = single_exp(gen, dau)
     axA.plot(xm, ym, "-", color=MOTHER, lw=2.0, solid_capstyle="round")
     axA.plot(xd, yd, "-", color=DAUGHTER, lw=2.0, solid_capstyle="round")
-    axA.text(0.045, 0.95, "Mother Size at Start", transform=axA.transAxes,
+    axA.text(0.045, 0.95, "Mother size at Start", transform=axA.transAxes,
              color=MOTHER, fontsize=9, va="top", ha="left")
-    axA.text(0.97, 0.06, "Daughter Birth", transform=axA.transAxes,
+    axA.text(0.97, 0.06, "Daughter birth", transform=axA.transAxes,
              color=DAUGHTER, fontsize=9, va="bottom", ha="right")
-    axA.set(xlabel="Maternal Replicative Age (Generation)", ylabel="Volume (fL)",
-            title="(a) The Mother Enlarges; Daughters Grow With Her Age")
+    axA.set(xlabel="Maternal replicative age (generations)", ylabel="Volume (fL)",
+            title="(a) The mother enlarges; daughters grow with her age")
     axA.set_xlim(0, max(gen) + 1)
     axA.yaxis.set_major_locator(MultipleLocator(5))
     axA.grid(axis="y", which="major", color="0.9", lw=0.7)
@@ -72,8 +73,8 @@ def main():
 
     # (b) cycle time slows with replicative age (accumulated damage lengthens it)
     axB.plot(gen, cyc, "-", color=CYCLE, lw=2.0, solid_capstyle="round")
-    axB.set(xlabel="Maternal Replicative Age (Generation)", ylabel="Cycle Time (min)",
-            title="(b) The Cell Cycle Slows With Replicative Age")
+    axB.set(xlabel="Maternal replicative age (generations)", ylabel="Cycle time (min)",
+            title="(b) The cell cycle slows with replicative age")
     axB.set_xlim(0, max(gen) + 1)
     axB.grid(axis="y", which="major", color="0.9", lw=0.7)
     axB.set_axisbelow(True)

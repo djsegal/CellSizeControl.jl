@@ -16,7 +16,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-BLUE, VERM, GREEN, GREY = "#0072b2", "#d55e00", "#009e73", "#999999"  # Okabe-Ito
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
+GREY = "#999999"
 HERE = Path(__file__).resolve().parent
 
 
@@ -41,10 +43,9 @@ def main() -> None:
             Vlaw.append(float(row["Vstar_law"]))
             theta = float(row["theta"])
 
-    plt.rcParams.update({"font.size": 11, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
-    fig.suptitle("A Bistable Whi5:SBF Switch Gives the Inhibitor-Dilution Sizer", y=0.99,
+    fig.suptitle("A bistable Whi5:SBF switch gives the inhibitor-dilution sizer", y=0.99,
                  fontsize=12)
 
     # (a) bifurcation / hysteresis
@@ -53,24 +54,24 @@ def main() -> None:
     axA.plot(branches["on"][0], branches["on"][1], "-", lw=2.6, color=GREEN,
              label="ON / Start fired (stable)")
     axA.plot(branches["unstable"][0], branches["unstable"][1], "--", lw=1.8, color=GREY,
-             label="unstable threshold")
+             label="Unstable threshold")
     axA.axvline(cstar, color=VERM, lw=1.8, ls=":")
     axA.text(cstar + 0.07, 0.72, r"Start at $c^\ast=W/V^\ast$", color=VERM, fontsize=9,
              ha="left", va="center")
     axA.annotate("", xy=(cstar + 0.04, 0.30), xytext=(2.55, 0.30),
                  arrowprops=dict(arrowstyle="->", color="0.35", lw=1.6))
-    axA.text(1.55, 0.35, "growth dilutes Whi5", fontsize=9, color="0.35", ha="center")
-    axA.set(xlabel=r"Whi5 Concentration $c=W/V$", ylabel="SBF Activity (Start commitment)",
-            title="(a) Whi5 Dilution Drives a Bistable Switch", xlim=(0, 3.0), ylim=(-0.03, 1.05))
+    axA.text(1.55, 0.35, "Growth dilutes Whi5", fontsize=9, color="0.35", ha="center")
+    axA.set(xlabel=r"Whi5 concentration $c=W/V$", ylabel="SBF activity (Start commitment)",
+            title="(a) Whi5 dilution drives a bistable switch", xlim=(0, 3.0), ylim=(-0.03, 1.05))
     axA.legend(loc="lower right", frameon=False, fontsize=9)
 
     # (b) emergent sizer law V* = W/theta
     grid = [0] + W
     axB.plot(grid, [g / theta for g in grid], "-", lw=2.2, color=GREY,
-             label=r"law $V^\ast=W/\theta$  ($\theta=c^\ast$)")
-    axB.plot(W, Vmech, "o", ms=8, color=BLUE, zorder=5, label="mechanistic switch")
-    axB.set(xlabel="Total Whi5 per Cycle $W$", ylabel=r"Emergent Set-Point $V^\ast$ (fL)",
-            title=r"(b) $V^\ast$ Is Exactly Linear in $W$", xlim=(0, max(W) * 1.05),
+             label=r"Law $V^\ast=W/\theta$  ($\theta=c^\ast$)")
+    axB.plot(W, Vmech, "o", ms=8, color=BLUE, zorder=5, label="Mechanistic switch")
+    axB.set(xlabel="Total Whi5 per cycle $W$", ylabel=r"Emergent set-point $V^\ast$ (fL)",
+            title=r"(b) $V^\ast$ is exactly linear in $W$", xlim=(0, max(W) * 1.05),
             ylim=(0, max(Vmech) * 1.05))
     axB.legend(loc="upper left", frameon=False, fontsize=9)
     axB.text(0.97, 0.05, rf"$\theta=c^\ast={theta:.3f}$", transform=axB.transAxes,

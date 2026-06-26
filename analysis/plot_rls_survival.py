@@ -15,8 +15,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
-BLUE, VERM = "#0072b2", "#d55e00"  # Okabe-Ito
 
 
 def main():
@@ -29,16 +30,15 @@ def main():
     # median survival age (where S crosses 0.5)
     med = int(np.argmin(np.abs(surv - 0.5)))
 
-    plt.rcParams.update({"font.size": 11, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, ax = plt.subplots(figsize=(6.2, 4.6))
     ax.step(age, surv, where="post", lw=2.4, color=BLUE)
     ax.fill_between(age, surv, step="post", alpha=0.12, color=BLUE)
     ax.axvline(med, color=VERM, lw=1.8, ls="--",
-               label=f"Median Lifespan {med} Divisions")
+               label=f"Median lifespan {med} divisions")
     ax.axhline(0.5, color="0.7", lw=0.8)
-    ax.set(xlabel="Replicative Age (Divisions)", ylabel="Surviving Fraction $S(a)$",
-           title="Emergent Replicative-Lifespan Survival Curve",
+    ax.set(xlabel="Replicative age (divisions)", ylabel="Surviving fraction $S(a)$",
+           title="Emergent replicative-lifespan survival curve",
            xlim=(0, age.max()), ylim=(0, 1.02))
     ax.legend(loc="upper right", frameon=False, fontsize=10)
 

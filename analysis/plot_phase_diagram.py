@@ -17,7 +17,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-VERM = "#d55e00"
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
 
 
@@ -37,10 +38,9 @@ def load_grid(fname, zkey):
 
 
 def main() -> None:
-    plt.rcParams.update({"font.size": 11, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11.4, 4.5))
-    fig.suptitle("Size-Control Phase Diagram: Homeostasis and Discriminator Reliability",
+    fig.suptitle("Size-control phase diagram: homeostasis and discriminator reliability",
                  y=0.99, fontsize=12)
 
     # (a) phase field over (alpha, f): logratio = homeostatic (~0) vs runaway (large +)
@@ -54,10 +54,10 @@ def main() -> None:
     axA.clabel(cs, fmt={0.5: "sizer | adder", 1.5: "adder | timer"}, fontsize=8)
     # analytic homeostasis boundary alpha*f = 1  ->  f = 1/alpha
     aa = np.linspace(1 / F.max(), A.max(), 200)
-    axA.plot(aa, 1 / aa, "--", color=VERM, lw=2.0, label=r"homeostasis bound $\alpha f=1$")
-    axA.set(xlabel=r"Control Strength $\alpha$ (sizer 0 / adder 1 / timer 2)",
-            ylabel=r"Division Asymmetry $f$ (daughter fraction)",
-            title="(a) Homeostatic vs Runaway Lineages", xlim=(A.min(), A.max()),
+    axA.plot(aa, 1 / aa, "--", color=VERM, lw=2.0, label=r"Homeostasis bound $\alpha f=1$")
+    axA.set(xlabel=r"Control strength $\alpha$ (sizer 0 / adder 1 / timer 2)",
+            ylabel=r"Division asymmetry $f$ (daughter fraction)",
+            title="(a) Homeostatic vs runaway lineages", xlim=(A.min(), A.max()),
             ylim=(F.min(), F.max()))
     axA.legend(loc="lower left", frameon=True, framealpha=0.9, fontsize=8)
 
@@ -68,9 +68,9 @@ def main() -> None:
     cb2.set_label("P(misclassified)", fontsize=9)
     for edge in (0.35, 0.65, 1.35, 1.65):
         axB.axvline(edge, color="w", lw=0.6, ls=":", alpha=0.5)
-    axB.set(xlabel=r"Control Strength $\alpha$",
-            ylabel=r"Measurement Noise $cv$",
-            title="(b) Where the Discriminator Becomes Unreliable", xlim=(A2.min(), A2.max()),
+    axB.set(xlabel=r"Control strength $\alpha$",
+            ylabel=r"Measurement noise $cv$",
+            title="(b) Where the discriminator becomes unreliable", xlim=(A2.min(), A2.max()),
             ylim=(CV.min(), CV.max()))
     axB.text(0.04, 0.285, "n=80 cells, 300 replicates", fontsize=8, color="w")
     axB.text(0.04, 0.265, "hard: strong sizers + bin edges", fontsize=8, color="w")

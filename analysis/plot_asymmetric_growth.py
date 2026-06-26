@@ -28,10 +28,11 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from scipy.optimize import curve_fit
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
 # Okabe-Ito colorblind-safe palette (science-space standard): mother = blue,
-# daughter = vermillion. Solid hues for lines/markers; translucent for the fills.
-BLUE, VERM = "#0072b2", "#d55e00"
+# daughter = vermillion.
 RLS = 30  # replicative-lifespan horizon (divisions); budding yeast ~25-30 (Schnitzer 2022)
 
 
@@ -76,11 +77,11 @@ def panel_timecourse(ax):
     vt = np.asarray(vt)
     ax.fill_between(t, 0, vm, color=BLUE, alpha=0.22, linewidth=0)
     ax.fill_between(t, vm, vt, color=VERM, alpha=0.32, linewidth=0)
-    ax.plot(t, vm, color=BLUE, lw=1.3, label="Mother Body")
-    ax.plot(t, vt, color=VERM, lw=1.0, label="Mother + Bud")
+    ax.plot(t, vm, color=BLUE, lw=1.3, label="Mother body")
+    ax.plot(t, vt, color=VERM, lw=1.0, label="Mother + bud")
     ax.set_xlabel("Time (min)")
     ax.set_ylabel("Volume (fL)")
-    ax.set_title("(a) Lineage Growth Over the Replicative Lifespan", fontsize=11)
+    ax.set_title("(a) Lineage growth over the replicative lifespan", fontsize=11)
     ax.set_xlim(0, t.max())
     ax.set_ylim(0, vt.max() * 1.14)
     ax.legend(loc="upper left", frameon=False, fontsize=9, handlelength=1.4)
@@ -104,9 +105,9 @@ def panel_maternal(ax):
     xd, yd, pd, r2d = product_fit(gen, dau)
     # data markers (the model output) with the mechanistic fit overlaid -- show both
     ax.scatter(gen, mom, s=26, facecolors="white", edgecolors=BLUE, linewidths=1.1,
-               zorder=4, label="Mother Size at Start")
+               zorder=4, label="Mother size at Start")
     ax.scatter(gen, dau, s=22, facecolors=VERM, edgecolors="white", linewidths=0.5,
-               zorder=4, label="Daughter Birth Size")
+               zorder=4, label="Daughter birth size")
     ax.plot(xm, ym, "-", color=BLUE, lw=1.8, zorder=3, solid_capstyle="round")
     ax.plot(xd, yd, "-", color=VERM, lw=1.8, zorder=3, solid_capstyle="round")
     lo = min(min(dau), min(mom)) - 2
@@ -125,7 +126,7 @@ def panel_maternal(ax):
             transform=ax.transAxes, color=VERM, fontsize=8.5, va="bottom", ha="right")
     ax.set_xlabel("Maternal replicative age (generations)")
     ax.set_ylabel("Volume (fL)")
-    ax.set_title("(b) Maternal-Age Asymmetry, to the Replicative Lifespan", fontsize=11)
+    ax.set_title("(b) Maternal-age asymmetry, to the replicative lifespan", fontsize=11)
     ax.yaxis.set_major_locator(MultipleLocator(5))
     ax.grid(axis="y", which="major", color="0.9", lw=0.7)
     ax.set_axisbelow(True)
@@ -139,10 +140,7 @@ def panel_maternal(ax):
 
 
 def main():
-    plt.rcParams.update({"font.size": 10, "figure.dpi": 300, "savefig.dpi": 300,
-                         "axes.spines.top": False, "axes.spines.right": False,
-                         "axes.linewidth": 0.9, "xtick.major.width": 0.9,
-                         "ytick.major.width": 0.9})
+    apply_style()
     fig, (axL, axR) = plt.subplots(1, 2, figsize=(11.0, 4.4))
     panel_timecourse(axL)
     r2m, r2d = panel_maternal(axR)

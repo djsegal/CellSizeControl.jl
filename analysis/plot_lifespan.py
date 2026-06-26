@@ -17,8 +17,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
-BLUE, VERM, GREEN = "#0072b2", "#d55e00", "#009e73"  # Okabe-Ito
 
 
 def main():
@@ -38,19 +39,18 @@ def main():
             traces[c][1].append(float(row["damage"]))
             thr[c] = float(row["threshold"])
 
-    plt.rcParams.update({"font.size": 10, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
-    fig.suptitle("The Replicative Lifespan Emerges From Autocatalytic Damage", y=0.99,
+    fig.suptitle("The replicative lifespan emerges from autocatalytic damage", y=0.99,
                  fontsize=12)
 
     # (a) RLS distribution
     axA.hist(rls, bins=np.arange(0, rls.max() + 2) - 0.5, color=BLUE, alpha=0.85,
              edgecolor="white", linewidth=0.3)
-    axA.axvline(m, color=VERM, lw=2.0, label=f"Mean {m:.1f} Divisions")
+    axA.axvline(m, color=VERM, lw=2.0, label=f"Mean {m:.1f} divisions")
     axA.axvspan(24, 26, color="0.6", alpha=0.18, label="Schnitzer 2022 (~24–26)")
-    axA.set(xlabel="Replicative Lifespan (Divisions)", ylabel="Cells",
-            title=f"(a) Emergent RLS Distribution (CV = {sd / m:.2f})")
+    axA.set(xlabel="Replicative lifespan (divisions)", ylabel="Cells",
+            title=f"(a) Emergent RLS distribution (CV = {sd / m:.2f})")
     axA.legend(loc="upper right", frameon=False, fontsize=9)
     axA.set_xlim(0, np.percentile(rls, 99.5) + 3)
 
@@ -60,10 +60,10 @@ def main():
                  solid_capstyle="round")
         axB.plot([ages[-1]], [dmg[-1]], "o", ms=5, color=VERM, zorder=5)
         axB.hlines(thr[c], 0, ages[-1], color="0.75", lw=0.8, linestyles="dotted")
-    axB.plot([], [], "-", color=GREEN, label="Accumulated Damage $D(a)$")
-    axB.plot([], [], "o", color=VERM, label="Senescence (Threshold Crossed)")
-    axB.set(xlabel="Replicative Age (Divisions)", ylabel="Mother Accumulated Damage (a.u.)",
-            title="(b) Autocatalytic Damage Reaches the Viability Threshold")
+    axB.plot([], [], "-", color=GREEN, label="Accumulated damage $D(a)$")
+    axB.plot([], [], "o", color=VERM, label="Senescence (threshold crossed)")
+    axB.set(xlabel="Replicative age (divisions)", ylabel="Mother accumulated damage (a.u.)",
+            title="(b) Autocatalytic damage reaches the viability threshold")
     axB.legend(loc="upper left", frameon=False, fontsize=9)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))

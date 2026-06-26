@@ -15,7 +15,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-BLUE, VERM, GREEN = "#0072b2", "#d55e00", "#009e73"
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
 
 
@@ -32,12 +33,11 @@ def main() -> None:
         labels.append(r["metric"])
         annot.append(f"model {mod:.2f} vs {ref:.2f}{u}  [{r['source']}]")
 
-    plt.rcParams.update({"font.size": 11, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, ax = plt.subplots(figsize=(9.2, 4.6))
     y = range(len(labels))
-    ax.axvspan(-1, 1, color=GREEN, alpha=0.13, label="within published tolerance")
-    ax.axvline(0, color="0.4", lw=1.4, ls="--", label="published target")
+    ax.axvspan(-1, 1, color=GREEN, alpha=0.13, label="Within published tolerance")
+    ax.axvline(0, color="0.4", lw=1.4, ls="--", label="Published target")
     ax.scatter(z, y, s=90, color=BLUE, zorder=5)
     for yi, (zi, a) in enumerate(zip(z, annot)):
         ax.text(2.55, yi, a, va="center", fontsize=8.5, color="0.25")
@@ -45,7 +45,7 @@ def main() -> None:
     ax.set_yticklabels(labels, fontsize=10)
     ax.set_xlim(-2.5, 2.5)
     ax.set_xlabel("Model deviation from the published value (in units of the tolerance band)")
-    ax.set_title("Cross-Validation: One Parameterization Reproduces Seven Benchmarks",
+    ax.set_title("Cross-validation: one parameterization reproduces seven benchmarks",
                  fontsize=12)
     ax.legend(loc="lower left", frameon=False, fontsize=8.5)
 

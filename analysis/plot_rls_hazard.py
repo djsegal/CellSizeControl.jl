@@ -18,8 +18,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
-BLUE, VERM = "#0072b2", "#d55e00"  # Okabe-Ito
 
 
 def main():
@@ -49,15 +50,14 @@ def main():
     r2 = 1 - np.sum(resid**2) / np.sum((np.log(h[lo]) - np.mean(np.log(h[lo]))) ** 2)
     mrdt = np.log(2) / gamma                        # mortality-rate doubling time (divisions)
 
-    plt.rcParams.update({"font.size": 11, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, ax = plt.subplots(figsize=(6.6, 4.6))
-    ax.semilogy(a_h, h, "o", ms=5, color=BLUE, alpha=0.8, label="Emergent Hazard $h(a)$")
+    ax.semilogy(a_h, h, "o", ms=5, color=BLUE, alpha=0.8, label="Emergent hazard $h(a)$")
     ax.semilogy(a_h, fit_h, "-", lw=2.2, color=VERM,
-                label=f"Gompertz Fit ($\\gamma$ = {gamma:.3f}, $R^2$ = {r2:.2f})")
-    ax.set(xlabel="Replicative Age (Divisions)",
-           ylabel="Mortality Hazard $h(a)$ (log scale)",
-           title="Gompertz-Like Mortality with Late-Life Deceleration")
+                label=f"Gompertz fit ($\\gamma$ = {gamma:.3f}, $R^2$ = {r2:.2f})")
+    ax.set(xlabel="Replicative age (divisions)",
+           ylabel="Mortality hazard $h(a)$ (log scale)",
+           title="Gompertz-like mortality with late-life deceleration")
     ax.annotate(f"Aging-phase doubling\ntime $\\approx$ {mrdt:.1f} divisions\n"
                 "(+ young ramp, late plateau)",
                 xy=(0.04, 0.96), xycoords="axes fraction", ha="left", va="top", fontsize=9,

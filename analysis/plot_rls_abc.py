@@ -18,7 +18,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import norm
 
-BLUE, VERM, GREEN = "#0072b2", "#d55e00", "#009e73"  # Okabe-Ito
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
 MEAN_T, SD_T = 26.6, 9.7  # McCormick 2015 WT pooled
 
@@ -34,10 +35,9 @@ def main() -> None:
 
     pp = np.array([int(r["rls"]) for r in csv.DictReader(open(HERE / "rls_abc_predictive.csv"))])
 
-    plt.rcParams.update({"font.size": 11, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
-    fig.suptitle("Calibrating the Emergent Replicative Lifespan to McCormick 2015 (ABC)",
+    fig.suptitle("Calibrating the emergent replicative lifespan to McCormick 2015 (ABC)",
                  y=0.99, fontsize=12)
 
     # (a) joint posterior (D_crit, kappa): the identifiability ridge
@@ -45,9 +45,9 @@ def main() -> None:
     fig.colorbar(hb, ax=axA, pad=0.02, label="posterior density")
     axA.text(0.04, 0.93, rf"ridge corr $\rho={rho:.2f}$", transform=axA.transAxes,
              fontsize=10, color=VERM, fontweight="bold")
-    axA.set(xlabel=r"Viability Threshold $D_{\rm crit}$",
+    axA.set(xlabel=r"Viability threshold $D_{\rm crit}$",
             ylabel=r"Autocatalysis $\kappa$",
-            title="(a) Joint Posterior: a Trade-Off Ridge")
+            title="(a) Joint posterior: a trade-off ridge")
 
     # (b) posterior-predictive vs the data
     bins = np.arange(0, pp.max() + 2) - 0.5
@@ -58,8 +58,8 @@ def main() -> None:
              label=f"McCormick 2015 WT\n(mean {MEAN_T}, SD {SD_T})")
     axB.axvline(pp.mean(), color=BLUE, lw=1.4, ls="--")
     axB.axvline(MEAN_T, color=VERM, lw=1.4, ls=":")
-    axB.set(xlabel="Replicative Lifespan (divisions)", ylabel="Probability Density",
-            title="(b) Posterior-Predictive Matches the Data", xlim=(0, 60))
+    axB.set(xlabel="Replicative lifespan (divisions)", ylabel="Probability density",
+            title="(b) Posterior-predictive matches the data", xlim=(0, 60))
     axB.legend(loc="upper right", frameon=False, fontsize=8.5)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))

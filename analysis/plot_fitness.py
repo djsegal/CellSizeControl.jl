@@ -17,8 +17,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE, REDPURPLE
+
 HERE = Path(__file__).resolve().parent
-DAMAGE, CYCLE = "#cc79a7", "#009e73"  # Okabe-Ito reddish-purple + bluish-green
+DAMAGE, CYCLE = REDPURPLE, GREEN  # Okabe-Ito reddish-purple + bluish-green
 
 
 def main():
@@ -30,23 +32,22 @@ def main():
             cyc.append(float(row["cycle"]))
     gen = np.array(gen, float)
 
-    plt.rcParams.update({"font.size": 10, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
-    fig.suptitle("The Fitness Face of Replicative Aging (Same Age-Eroding Asymmetry)",
+    fig.suptitle("The fitness face of replicative aging (same age-eroding asymmetry)",
                  y=0.99, fontsize=12)
 
     axA.plot(gen, dmg, "-", lw=2.0, color=DAMAGE, solid_capstyle="round")
-    axA.set(xlabel="Maternal Replicative Age (Generation)",
-            ylabel="Daughter Inherited Damage (a.u.)",
-            title="(a) Daughters of Old Mothers Inherit More Damage")
+    axA.set(xlabel="Maternal replicative age (generations)",
+            ylabel="Daughter inherited damage (a.u.)",
+            title="(a) Daughters of old mothers inherit more damage")
     axA.set_xlim(0, max(gen) + 1)
     axA.grid(axis="y", which="major", color="0.9", lw=0.7)
     axA.set_axisbelow(True)
 
     axB.plot(gen, cyc, "-", lw=2.0, color=CYCLE, solid_capstyle="round")
-    axB.set(xlabel="Maternal Replicative Age (Generation)", ylabel="Cycle Time (min)",
-            title="(b) The Cell Cycle Slows With Replicative Age")
+    axB.set(xlabel="Maternal replicative age (generations)", ylabel="Cycle time (min)",
+            title="(b) The cell cycle slows with replicative age")
     axB.set_xlim(0, max(gen) + 1)
     axB.grid(axis="y", which="major", color="0.9", lw=0.7)
     axB.set_axisbelow(True)

@@ -18,8 +18,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
-COL = {"sizer": "#0072b2", "adder": "#009e73", "timer": "#d55e00"}  # Okabe-Ito
+COL = {"sizer": BLUE, "adder": GREEN, "timer": VERM}  # Okabe-Ito
 ORDER = ["sizer", "adder", "timer"]
 LBL = {"sizer": r"sizer ($\alpha$=0)", "adder": r"adder ($\alpha$=1)",
        "timer": r"timer ($\alpha$=1.5)"}
@@ -31,10 +33,10 @@ def load(fname):
 
 
 def main() -> None:
-    plt.rcParams.update({"font.size": 10.5, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
+    plt.rcParams.update({"font.size": 10.5})
     fig, ax = plt.subplots(2, 2, figsize=(10.5, 8.2))
-    fig.suptitle("Dynamical Signatures of Size Control (Matched Mean Birth Size)",
+    fig.suptitle("Dynamical signatures of size control (matched mean birth size)",
                  y=0.995, fontsize=13)
 
     # (a) birth-size distributions
@@ -46,8 +48,8 @@ def main() -> None:
         v = np.array(H[reg])
         ax[0, 0].hist(v, bins=bins, density=True, histtype="step", lw=2.2, color=COL[reg],
                       label=f"{LBL[reg]}, CV={v.std() / v.mean():.2f}")
-    ax[0, 0].set(xlabel="Birth Volume $V_b$", ylabel="Probability Density",
-                 title="(a) Birth-Size Distributions")
+    ax[0, 0].set(xlabel="Birth volume $V_b$", ylabel="Probability density",
+                 title="(a) Birth-size distributions")
     ax[0, 0].legend(frameon=False, fontsize=8.5)
 
     # (b) inheritance map Vb_{n+1} vs Vb_n
@@ -62,9 +64,9 @@ def main() -> None:
         xs = np.array([x.min(), x.max()])
         ax[0, 1].plot(xs, np.polyval(np.polyfit(x, y, 1), xs), "-", lw=2.2, color=COL[reg],
                       label=f"{LBL[reg]}, slope={m:.2f}")
-    ax[0, 1].set(xlabel="Birth Volume $V_b$ (gen $n$)",
-                 ylabel="Birth Volume $V_b$ (gen $n{+}1$)",
-                 title=r"(b) Inheritance Map (slope = memory $\alpha f$)")
+    ax[0, 1].set(xlabel="Birth volume $V_b$ (gen $n$)",
+                 ylabel="Birth volume $V_b$ (gen $n{+}1$)",
+                 title=r"(b) Inheritance map (slope = memory $\alpha f$)")
     ax[0, 1].legend(frameon=False, fontsize=8.5, loc="upper left")
 
     # (c) step-response
@@ -74,9 +76,9 @@ def main() -> None:
         S[r["regime"]][1].append(float(r["meanVb"]))
     for reg in ORDER:
         ax[1, 0].plot(S[reg][0], S[reg][1], "o-", ms=4, lw=2.0, color=COL[reg], label=LBL[reg])
-    ax[1, 0].axhline(20.0, color="0.5", lw=1.0, ls="--", label="set-point")
-    ax[1, 0].set(xlabel="Generation After Perturbation", ylabel="Mean Birth Volume $V_b$",
-                 title="(c) Step-Response (relaxation from $2\\times$)")
+    ax[1, 0].axhline(20.0, color="0.5", lw=1.0, ls="--", label="Set-point")
+    ax[1, 0].set(xlabel="Generation after perturbation", ylabel="Mean birth volume $V_b$",
+                 title="(c) Step-response (relaxation from $2\\times$)")
     ax[1, 0].legend(frameon=False, fontsize=8.5)
 
     # (d) autocorrelation
@@ -87,8 +89,8 @@ def main() -> None:
     for reg in ORDER:
         ax[1, 1].plot(A[reg][0], A[reg][1], "o-", ms=4, lw=2.0, color=COL[reg], label=LBL[reg])
     ax[1, 1].axhline(0.0, color="0.5", lw=0.8)
-    ax[1, 1].set(xlabel="Generation Lag", ylabel="Birth-Size Autocorrelation",
-                 title="(d) Memory: a Sizer Forgets Immediately")
+    ax[1, 1].set(xlabel="Generation lag", ylabel="Birth-size autocorrelation",
+                 title="(d) Memory: a sizer forgets immediately")
     ax[1, 1].legend(frameon=False, fontsize=8.5)
 
     fig.tight_layout(rect=(0, 0, 1, 0.97))

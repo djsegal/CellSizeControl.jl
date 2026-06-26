@@ -17,6 +17,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
 
 
@@ -40,18 +42,18 @@ def main():
 
     ext = [Dv[0], Dv[-1], Kv[0], Kv[-1]]
 
-    plt.rcParams.update({"font.size": 10, "figure.dpi": 150, "savefig.dpi": 150})
+    apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
-    fig.suptitle("Emergent Replicative-Lifespan Landscape (Robust, Not Fine-Tuned)",
+    fig.suptitle("Emergent replicative-lifespan landscape (robust, not fine-tuned)",
                  y=0.99, fontsize=12)
 
     for ax, Z, label, title in (
-        (axA, mean, "Mean RLS (Divisions)", "(a) Mean Lifespan"),
-        (axB, cv, "Lifespan CV", "(b) Lifespan Variability"),
+        (axA, mean, "Mean RLS (divisions)", "(a) Mean lifespan"),
+        (axB, cv, "Lifespan CV", "(b) Lifespan variability"),
     ):
         im = ax.imshow(Z, origin="lower", aspect="auto", extent=ext, cmap="cividis")
         fig.colorbar(im, ax=ax, label=label)
-        ax.set(xlabel=r"Viability Threshold $D_\mathrm{crit}$",
+        ax.set(xlabel=r"Viability threshold $D_\mathrm{crit}$",
                ylabel=r"Autocatalysis $\kappa$", title=title)
 
     # contour the Schnitzer-matching region (mean 23-27 AND CV 0.25-0.35) on both panels
@@ -59,8 +61,8 @@ def main():
     for ax in (axA, axB):
         ax.contour(np.linspace(Dv[0], Dv[-1], match.shape[1]),
                    np.linspace(Kv[0], Kv[-1], match.shape[0]),
-                   match, levels=[0.5], colors="#d55e00", linewidths=2.0)
-    axA.plot([], [], color="#d55e00", lw=2.0, label="Schnitzer 2022 Region")
+                   match, levels=[0.5], colors=VERM, linewidths=2.0)
+    axA.plot([], [], color=VERM, lw=2.0, label="Schnitzer 2022 region")
     axA.legend(loc="upper right", frameon=True, framealpha=0.85, fontsize=8.5)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))

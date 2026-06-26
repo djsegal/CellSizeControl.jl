@@ -23,12 +23,14 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from scipy.optimize import curve_fit
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
 # Okabe-Ito colorblind-safe palette (PubPlots / science-space standard), chosen for high
 # contrast + legibility: mother = blue, daughter = VERMILLION (red-orange, not the hard-to-
 # read yellow-orange). Fills are medium-saturation tints of the same hues (not washed out).
-MOTHER_FILL, MOTHER_EDGE = "#7fb3d5", "#0072b2"
-BUD_FILL, BUD_EDGE = "#e8895a", "#d55e00"
+MOTHER_FILL, MOTHER_EDGE = "#7fb3d5", BLUE
+BUD_FILL, BUD_EDGE = "#e8895a", VERM
 RLS = 30  # replicative lifespan horizon (divisions); yeast ~25-30 (Schnitzer 2022)
 
 
@@ -74,12 +76,12 @@ def panel_timecourse(ax):
             vm.append(m)
             vt.append(m + b)
     ax.fill_between(t, 0, vm, color=MOTHER_FILL, label="Mother", linewidth=0)
-    ax.fill_between(t, vm, vt, color=BUD_FILL, label="Bud (Daughter)", linewidth=0)
+    ax.fill_between(t, vm, vt, color=BUD_FILL, label="Bud (daughter)", linewidth=0)
     ax.plot(t, vm, color=MOTHER_EDGE, lw=0.9)
     ax.plot(t, vt, color=BUD_EDGE, lw=0.9)
     ax.set_xlabel("Time (min)")
     ax.set_ylabel("Volume (fL)")
-    ax.set_title("(a) Lineage Growth Over the Replicative Lifespan", fontsize=11)
+    ax.set_title("(a) Lineage growth over the replicative lifespan", fontsize=11)
     ax.set_xlim(0, max(t))
     ax.set_ylim(0, max(vt) * 1.12)
     ax.legend(loc="upper left", frameon=False, fontsize=9)
@@ -104,14 +106,14 @@ def panel_maternal(ax):
     ax.set_ylim(lo, hi)
     ax.set_xlim(0, RLS + 1)
     # direct, color-matched labels in clear space (each curve fits its mechanism to R^2=1)
-    ax.text(0.045, 0.95, "Mother Size at Start\n" + mother_eq(pm), transform=ax.transAxes,
+    ax.text(0.045, 0.95, "Mother size at Start\n" + mother_eq(pm), transform=ax.transAxes,
             color=MOTHER_EDGE, fontsize=8.5, va="top", ha="left")
     ax.text(0.97, 0.06,
-            "Daughter Birth\n$V_d = r(g)\\,V_m,\\ r{:}\\,0.7{\\to}0.9$",
+            "Daughter birth\n$V_d = r(g)\\,V_m,\\ r{:}\\,0.7{\\to}0.9$",
             transform=ax.transAxes, color=BUD_EDGE, fontsize=8.5, va="bottom", ha="right")
-    ax.set_xlabel("Maternal Replicative Age (Generation)")
+    ax.set_xlabel("Maternal replicative age (generations)")
     ax.set_ylabel("Volume (fL)")
-    ax.set_title("(b) Maternal-Age Asymmetry, to the Replicative Lifespan", fontsize=11)
+    ax.set_title("(b) Maternal-age asymmetry, to the replicative lifespan", fontsize=11)
     ax.yaxis.set_major_locator(MultipleLocator(5))
     ax.grid(axis="y", which="major", color="0.9", lw=0.7)
     ax.set_axisbelow(True)
@@ -119,11 +121,10 @@ def panel_maternal(ax):
 
 
 def main():
-    plt.rcParams.update({"font.size": 10, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, (axL, axR) = plt.subplots(1, 2, figsize=(11.5, 4.6))
-    fig.suptitle("Asymmetric Cell Growth Across the Replicative Lifespan "
-                 "(Energetic Cell-Size Model)", y=0.99, fontsize=12.5)
+    fig.suptitle("Asymmetric cell growth across the replicative lifespan "
+                 "(energetic cell-size model)", y=0.99, fontsize=12.5)
     panel_timecourse(axL)
     r2m, r2d = panel_maternal(axR)
     fig.tight_layout(rect=(0, 0, 1, 0.95))

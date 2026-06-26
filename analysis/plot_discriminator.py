@@ -16,8 +16,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
-COL = {"timer": "#0072b2", "adder": "#d55e00", "sizer": "#009e73"}  # Okabe-Ito
+COL = {"timer": BLUE, "adder": VERM, "sizer": GREEN}  # Okabe-Ito
 
 
 def main():
@@ -33,8 +35,7 @@ def main():
             tvb.append(float(row["timer_Vb"]))
             svb.append(float(row["sizer_Vb"]))
 
-    plt.rcParams.update({"font.size": 10, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
 
     for rule in ("timer", "adder", "sizer"):
@@ -42,14 +43,14 @@ def main():
         s = np.polyfit(vb, vd, 1)[0]
         axA.scatter(vb, vd, s=6, color=COL[rule], alpha=0.5,
                     label=f"{rule} (slope {s:.2f})")
-    axA.set(xlabel=r"Birth Volume $V_b$", ylabel=r"Division Volume $V_d$",
-            title="(a) The Size-Control Slope Discriminator")
+    axA.set(xlabel=r"Birth volume $V_b$", ylabel=r"Division volume $V_d$",
+            title="(a) The size-control slope discriminator")
     axA.legend(loc="upper left", frameon=False, fontsize=9)
 
-    axB.plot(gen, tvb, "-", lw=2.0, color="#d55e00", label="Sub-Doubling Timer (Collapses)")
-    axB.plot(gen, svb, "-", lw=2.0, color="#0072b2", label="Inhibitor-Dilution Sizer (Stable)")
-    axB.set(xlabel="Generation", ylabel="Birth Volume",
-            title="(b) The Sizer Stabilizes What the Timer Collapses")
+    axB.plot(gen, tvb, "-", lw=2.0, color=VERM, label="Sub-doubling timer (collapses)")
+    axB.plot(gen, svb, "-", lw=2.0, color=BLUE, label="Inhibitor-dilution sizer (stable)")
+    axB.set(xlabel="Generation", ylabel="Birth volume",
+            title="(b) The sizer stabilizes what the timer collapses")
     axB.legend(loc="center right", frameon=False, fontsize=9)
 
     fig.tight_layout()

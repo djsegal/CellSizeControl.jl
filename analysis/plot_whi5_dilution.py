@@ -16,8 +16,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+
 HERE = Path(__file__).resolve().parent
-BLUE, VERM, GREEN = "#0072b2", "#d55e00", "#009e73"  # Okabe-Ito daughter / threshold / mother
+# Okabe-Ito: daughter / threshold / mother
 THRESH, VSTAR = 1.5, 40.0
 
 
@@ -33,10 +35,9 @@ def main():
             C[c].append(float(row["whi5_conc"]))
     col = {"daughter": BLUE, "mother": GREEN}
 
-    plt.rcParams.update({"font.size": 11, "figure.dpi": 150, "savefig.dpi": 150,
-                         "axes.spines.top": False, "axes.spines.right": False})
+    apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
-    fig.suptitle("Inhibitor (Whi5) Dilution Sets Start at a Critical Size", y=0.99,
+    fig.suptitle("Inhibitor (Whi5) dilution sets Start at a critical size", y=0.99,
                  fontsize=12)
 
     for c in ("daughter", "mother"):
@@ -44,17 +45,17 @@ def main():
         axA.plot(t[c], C[c], "-", lw=2.4, color=col[c],
                  label=f"{c.capitalize()} (G1 sizer step {g1:.0f} min)")
         axA.plot([t[c][-1]], [C[c][-1]], "o", ms=7, color=col[c], zorder=5)
-    axA.axhline(THRESH, color=VERM, lw=1.8, ls="--", label=r"Start Threshold $\theta$")
-    axA.set(xlabel="Time in G1 (min)", ylabel=r"Inhibitor Concentration $[W]=W/V$",
-            title="(a) Whi5 Dilutes to the Start Threshold")
+    axA.axhline(THRESH, color=VERM, lw=1.8, ls="--", label=r"Start threshold $\theta$")
+    axA.set(xlabel="Time in G1 (min)", ylabel=r"Inhibitor concentration $[W]=W/V$",
+            title="(a) Whi5 dilutes to the Start threshold")
     axA.legend(loc="upper right", frameon=False, fontsize=9)
 
     for c in ("daughter", "mother"):
         axB.plot(t[c], V[c], "-", lw=2.4, color=col[c])
         axB.plot([t[c][-1]], [V[c][-1]], "o", ms=7, color=col[c], zorder=5)
-    axB.axhline(VSTAR, color=VERM, lw=1.8, ls="--", label=r"Critical Size $V^\ast = W/\theta$")
-    axB.set(xlabel="Time in G1 (min)", ylabel="Cell Volume (fL)",
-            title="(b) Growth to the Critical Size $V^\\ast$")
+    axB.axhline(VSTAR, color=VERM, lw=1.8, ls="--", label=r"Critical size $V^\ast = W/\theta$")
+    axB.set(xlabel="Time in G1 (min)", ylabel="Cell volume (fL)",
+            title="(b) Growth to the critical size $V^\\ast$")
     axB.legend(loc="lower right", frameon=False, fontsize=9)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))

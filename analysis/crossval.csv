@@ -1,0 +1,8 @@
+metric,model,reference,ref_lo,ref_hi,unit,source
+Sizer slope,0.0148,0.0000,-0.2000,0.2000,,Soifer-Amir 2016
+Adder slope,0.8971,1.0000,0.8000,1.2000,,Soifer-Amir 2016
+Timer slope,1.9167,2.0000,1.8000,2.2000,,Soifer-Amir 2016
+Mother G1,19.0000,19.0000,17.0000,21.0000,min,Di Talia 2007
+Daughter G1,41.0800,45.5000,40.0000,50.0000,min,Di Talia 2007
+RLS mean,26.5007,26.6000,25.0000,28.0000,div,McCormick 2015
+RLS CV,0.3684,0.3650,0.3400,0.3900,,McCormick 2015

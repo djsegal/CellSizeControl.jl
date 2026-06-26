@@ -1,7 +1,16 @@
 using CellSizeControl
 using Test
+using Aqua
+using ExplicitImports
 
 @testset "CellSizeControl" begin
+    # ---- Q: package-quality gates (release-readiness) ----
+    @testset "Q — Aqua + ExplicitImports" begin
+        Aqua.test_all(CellSizeControl; ambiguities=false)
+        @test check_no_implicit_imports(CellSizeControl) === nothing
+        @test check_all_explicit_imports_via_owners(CellSizeControl) === nothing
+    end
+
     # ---- L1: analytic limits — the slope discriminator recovers each regime ----
     @testset "L1 — slope discriminator (timer 2 / adder 1 / sizer 0)" begin
         s_timer = simulate_lineage(TimerRule(2.0); n=600, seed=1)

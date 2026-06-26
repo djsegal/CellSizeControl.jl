@@ -11,9 +11,12 @@ using CellSizeControl
 using Statistics: mean, std
 
 const HERE = @__DIR__
-const N = 1500                                   # lineages per grid point
-const DCRIT = collect(20.0:2.0:48.0)             # viability threshold
-const KAPPA = collect(0.04:0.01:0.18)            # autocatalysis strength
+# N lineages per grid point + grid step from ARGS: `gen_rls_landscape.jl [N] [fine]`
+# (fine=1 → high-resolution grid for a smooth publication landscape). Default = coarse/fast.
+const N = isempty(ARGS) ? 1500 : parse(Int, ARGS[1])
+const FINE = length(ARGS) >= 2 && ARGS[2] == "fine"
+const DCRIT = FINE ? collect(20.0:1.0:48.0) : collect(20.0:2.0:48.0)   # viability threshold
+const KAPPA = FINE ? collect(0.04:0.005:0.18) : collect(0.04:0.01:0.18)  # autocatalysis
 
 open(joinpath(HERE, "rls_landscape.csv"), "w") do io
     println(io, "D_crit,kappa,mean_rls,cv_rls")

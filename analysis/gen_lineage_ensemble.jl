@@ -43,6 +43,7 @@ function run_ensemble(N::Int)
             enlarge_max=0.45,
             enlarge_tau=8.0,
             cv=0.10,
+            damage_cv=0.35,        # stochastic damage production → real inherited-damage dist
             seed=i,
         )
         for a in 1:NGEN

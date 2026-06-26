@@ -38,8 +38,8 @@ def main():
 
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150, "savefig.dpi": 150,
                          "axes.spines.top": False, "axes.spines.right": False})
-    fig, (axA, axC) = plt.subplots(1, 2, figsize=(11, 4.4))
-    fig.suptitle(f"Stochastic Lineage Ensemble (N = {N:,} Lineages, 10% Division Noise)",
+    fig, (axA, axB, axC) = plt.subplots(1, 3, figsize=(13.5, 4.2))
+    fig.suptitle(f"Stochastic Lineage Ensemble (N = {N:,} Lineages, Division + Damage Noise)",
                  y=0.99, fontsize=12)
 
     axA.hist(vd, bins=50, color=BLUE, alpha=0.85, edgecolor="white", linewidth=0.3)
@@ -49,9 +49,16 @@ def main():
             title="(a) Daughter Birth-Size Distribution")
     axA.legend(loc="upper left", frameon=False, fontsize=9)
 
-    axC.scatter(vm, vd, s=5, color=GREEN, alpha=0.35, edgecolor="none")
+    axB.hist(dmg, bins=50, color=GREEN, alpha=0.85, edgecolor="white", linewidth=0.3)
+    axB.axvline(summ["daughter_damage_mean"], color=VERM, lw=2.0,
+                label=f"Mean {summ['daughter_damage_mean']:.2f}  (CV {summ['daughter_damage_cv']:.2f})")
+    axB.set(xlabel="Inherited Damage (a.u.)", ylabel="Daughters (Subsample)",
+            title="(b) Inherited-Damage Distribution")
+    axB.legend(loc="upper right", frameon=False, fontsize=9)
+
+    axC.scatter(vm, vd, s=5, color=BLUE, alpha=0.35, edgecolor="none")
     axC.set(xlabel="Mother Volume at Division (fL)", ylabel="Daughter Birth Volume (fL)",
-            title=f"(b) Mother $\\to$ Daughter Size Coupling (r = {r:.2f})")
+            title=f"(c) Mother $\\to$ Daughter Size Coupling (r = {r:.2f})")
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = HERE / "lineage_ensemble.png"

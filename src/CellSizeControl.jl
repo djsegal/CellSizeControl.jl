@@ -23,8 +23,11 @@ export SizeControlRule,
     SizerRule,
     InhibitorDilutionSizer,
     SaturatingTimerRule,
+    Whi5SBFSwitch,
     division_volume,
     setpoint_volume,
+    whi5_sbf_steady,
+    whi5_sbf_threshold,
     saturating_timer_buds,
     simulate_lineage,
     aging_daughter_fraction,
@@ -106,6 +109,116 @@ function saturating_timer_buds(rule::SaturatingTimerRule; V0::Real=20.0, n::Int=
     end
     return buds
 end
+
+# ---------------------------------------------------------------------------
+# Mechanistic Whi5:SBF bistable Start switch (the inhibitor-dilution sizer from
+# first principles). SBF activity x ∈ [0,1] is repressed by *effective* Whi5; active
+# SBF (via Cln1,2) in turn inactivates Whi5 — a double-negative feedback that is
+# bistable. Whi5 concentration `c = W/V` dilutes as the cell grows; the G1/OFF state
+# disappears at a saddle-node `c*`, firing Start, so the set-point V* = W/c* EMERGES.
+#   effective Whi5:  e(x,c) = c / (1 + (x/Kx)^p)        (SBF inactivates Whi5)
+#   dx/dt          = β / (1 + (e/Ke)^q) − γ·x            (Whi5 represses SBF)
+# ---------------------------------------------------------------------------
+"""Mechanistic Whi5:SBF bistable Start switch: the inhibitor-dilution sizer from first
+principles. A double-negative feedback (Whi5 represses SBF; active SBF inactivates Whi5)
+makes SBF activity bistable; growth dilutes Whi5 (`c = W/V`) until the OFF/G1 state vanishes
+at a saddle-node `c*`, so the set-point `V* = W/c*` emerges rather than being imposed. Use
+the keyword constructor [`Whi5SBFSwitch(W; ...)`](@ref); `Vstar` is precomputed."""
+struct Whi5SBFSwitch <: SizeControlRule
+    W::Float64        # total Whi5 (size-independent amount synthesized per cycle)
+    beta::Float64     # max SBF activation rate
+    gamma::Float64    # SBF deactivation rate
+    Ke::Float64       # effective-Whi5 repression threshold
+    q::Float64        # Whi5-repression Hill coefficient
+    Kx::Float64       # SBF→Whi5 inactivation threshold (the double-negative arm)
+    p::Float64        # SBF-inactivation Hill coefficient
+    Vstar::Float64    # emergent set-point V* = W/c* (precomputed at construction)
+end
+
+_whi5_effective(x, c, Kx, p) = c / (1 + (x / Kx)^p)
+
+function _sbf_dxdt(x, c, beta, gamma, Ke, q, Kx, p)
+    e = _whi5_effective(x, c, Kx, p)
+    return beta / (1 + (e / Ke)^q) - gamma * x
+end
+
+function _sbf_steady(c, x0, beta, gamma, Ke, q, Kx, p; dt=0.005, tmax=4000.0)
+    x = float(x0)
+    t = 0.0
+    while t < tmax
+        dx = _sbf_dxdt(x, c, beta, gamma, Ke, q, Kx, p)
+        x += dx * dt
+        x = clamp(x, 0.0, 1.0e3)
+        abs(dx) < 1.0e-10 && break
+        t += dt
+    end
+    return x
+end
+
+"""
+    whi5_sbf_steady(rule, c; from_high=false) -> Float64
+
+Steady-state SBF activity at a fixed Whi5 concentration `c`, integrated from the OFF branch
+(`from_high=false`, x₀=0) or the ON branch (`from_high=true`, x₀=1). The two differ across
+the bistable window — that hysteresis is the irreversible Start switch.
+"""
+function whi5_sbf_steady(rule::Whi5SBFSwitch, c::Real; from_high::Bool=false)
+    return _sbf_steady(
+        float(c), from_high ? 1.0 : 0.0, rule.beta, rule.gamma, rule.Ke, rule.q, rule.Kx, rule.p
+    )
+end
+
+# Grow V (so c = W/V falls), tracking SBF activity by continuation from the OFF branch; the
+# volume where it jumps past the halfway mark to the ON state is the emergent set-point V*.
+function _whi5_sbf_start_volume(
+    W, beta, gamma, Ke, q, Kx, p; V0=1.0, Vmax=1.0e6, dlogV=0.002
+)
+    xhigh = _sbf_steady(1.0e-6, 1.0, beta, gamma, Ke, q, Kx, p)   # ON asymptote (c→0)
+    thresh = 0.5 * xhigh
+    V = float(V0)
+    x = _sbf_steady(W / V, 0.0, beta, gamma, Ke, q, Kx, p)
+    while V < Vmax
+        Vprev = V
+        V *= (1 + dlogV)
+        x = _sbf_steady(W / V, x, beta, gamma, Ke, q, Kx, p)      # continuation from OFF
+        x > thresh && return sqrt(Vprev * V)
+    end
+    return V
+end
+
+"""
+    Whi5SBFSwitch(W; beta=1.0, gamma=1.0, Ke=0.30, q=4.0, Kx=0.40, p=4.0)
+
+Mechanistic Whi5:SBF Start switch with total Whi5 amount `W`. The emergent set-point
+`V* = W/c*` (the saddle-node concentration `c*` where the OFF/G1 state disappears) is
+precomputed. The default switch parameters are bistable with `c* ≈ 0.449`, so `V* ≈ 2.225·W`
+— linear in `W`, which is exactly the inhibitor-dilution sizer law `V* = W/θ` with the
+threshold `θ = c*` now EMERGENT from a bistable mechanism rather than imposed. See
+[`whi5_sbf_threshold`](@ref) and [`InhibitorDilutionSizer`](@ref).
+"""
+function Whi5SBFSwitch(
+    W::Real; beta::Real=1.0, gamma::Real=1.0, Ke::Real=0.30, q::Real=4.0, Kx::Real=0.40,
+    p::Real=4.0,
+)
+    Vstar = _whi5_sbf_start_volume(
+        float(W), float(beta), float(gamma), float(Ke), float(q), float(Kx), float(p)
+    )
+    return Whi5SBFSwitch(
+        float(W), float(beta), float(gamma), float(Ke), float(q), float(Kx), float(p), Vstar
+    )
+end
+
+setpoint_volume(r::Whi5SBFSwitch) = r.Vstar
+division_volume(r::Whi5SBFSwitch, Vb) = r.Vstar
+
+"""
+    whi5_sbf_threshold(rule) -> Float64
+
+The emergent Start threshold concentration `θ = c* = W/V*`: the Whi5 concentration at the
+saddle-node where the G1/OFF state disappears. An [`InhibitorDilutionSizer`](@ref)`(rule.W, θ)`
+has the same set-point — the mechanistic switch reproduces `V* = W/θ` from first principles.
+"""
+whi5_sbf_threshold(rule::Whi5SBFSwitch) = rule.W / rule.Vstar
 
 # ---------------------------------------------------------------------------
 # Lineage simulation (symmetric or asymmetric division, multiplicative noise).

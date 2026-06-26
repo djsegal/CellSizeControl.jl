@@ -46,6 +46,36 @@ using Statistics: mean, std
         @test isapprox(size_control_slope(s_ids.Vb, s_ids.Vd), 0.0; atol=0.3)
     end
 
+    # ---- CC-5: the mechanistic Whi5:SBF bistable switch reproduces V* = W/θ ----
+    # The phenomenological inhibitor-dilution sizer's law emerges from a double-negative
+    # feedback: the OFF/G1 state disappears at a saddle-node c*, and V* = W/c* is linear in W.
+    @testset "CC-5 — mechanistic Whi5:SBF switch (V* = W/θ from a bistable mechanism)" begin
+        sw = Whi5SBFSwitch(18.0)
+
+        # (1) genuinely bistable: across the switching window the OFF and ON branches differ
+        @test whi5_sbf_steady(sw, 5.0; from_high=false) < 0.05          # small cell → OFF
+        @test whi5_sbf_steady(sw, 1.0e-4; from_high=false) > 0.9        # big cell → ON
+        lo = whi5_sbf_steady(sw, 0.8; from_high=false)
+        hi = whi5_sbf_steady(sw, 0.8; from_high=true)
+        @test hi - lo > 0.5                                             # hysteresis (two stable states)
+
+        # (2) the emergent set-point is EXACTLY linear in W (c* is W-independent → a true sizer)
+        @test setpoint_volume(Whi5SBFSwitch(36.0)) / setpoint_volume(Whi5SBFSwitch(18.0)) ≈ 2 atol =
+            1e-2
+        # the emergent threshold θ = c* does not depend on W
+        @test whi5_sbf_threshold(Whi5SBFSwitch(36.0)) ≈ whi5_sbf_threshold(Whi5SBFSwitch(18.0)) atol =
+            1e-3
+
+        # (3) it reproduces the inhibitor-dilution law: an InhibitorDilutionSizer with the
+        #     emergent θ has the SAME set-point as the mechanistic switch
+        θ = whi5_sbf_threshold(sw)
+        @test setpoint_volume(InhibitorDilutionSizer(sw.W, θ)) ≈ setpoint_volume(sw) rtol = 1e-6
+
+        # (4) and it behaves as a sizer in a lineage (Vd–Vb slope → 0)
+        s_sw = simulate_lineage(sw; V0=5.0, n=400, seed=7)
+        @test isapprox(size_control_slope(s_sw.Vb, s_sw.Vd), 0.0; atol=0.3)
+    end
+
     # ---- L2: reference behaviour — the timer collapses, the sizer is stable ----
     # (reproduces the yeast-wcm CellSize finding: a sub-doubling timer drives
     #  daughters toward 0; the inhibitor-dilution sizer holds them at V*/2.)

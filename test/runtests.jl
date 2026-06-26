@@ -114,6 +114,15 @@ using Test
         @test ph.Vdaughter[2:end] == L.Vdaughter                # real gens 1..N unchanged
     end
 
+    # ---- lineage timecourse: the mother is monotonic (never shrinks) over the lifespan ----
+    @testset "lineage_timecourse — monotonic mother, buds detach" begin
+        tc = lineage_timecourse(; n_max=29)
+        @test issorted(tc.Vmother)                       # mother volume never decreases
+        @test tc.Vmother[end] > tc.Vmother[1]            # mother enlarges with age
+        @test minimum(tc.Vbud) ≈ 0.0                     # bud returns to 0 at each division
+        @test maximum(tc.Vbud) > 0.0                     # buds grow during the budded phase
+    end
+
     # ---- L2 reference: the two-step G1 reproduces Di Talia 2007 mother/daughter G1 ----
     @testset "L2 — Di Talia two-step G1 (mother ~19, daughter ~45 min)" begin
         Vstar, T_cln2, tau_bud = 36.0, 19.0, 52.0

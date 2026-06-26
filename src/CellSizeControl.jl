@@ -34,6 +34,7 @@ export SizeControlRule,
     grow_to,
     grow_for,
     cell_cycle,
+    lineage_timecourse,
     size_control_slope,
     classify_control
 
@@ -310,6 +311,64 @@ function cell_cycle(
         Vdaughter,
         Vmother=Vstart,
     )
+end
+
+"""
+    lineage_timecourse(; n_max=29, Vstar0=36.0, T_cln2=19.0, tau_bud=52.0, m_enlarge=0.45,
+                       m_tau=8.0, r0=0.69, r_max=0.90, r_tau=14.0, dt=0.5, rate=qss_growth_rate)
+        -> (; t, Vmother, Vbud)
+
+Volume-vs-time trajectory of one mother lineage over `n_max+1` cell cycles (≈ the replicative
+lifespan). Each cycle: the mother grows to the enlarging set-point `V*(a)` during G1, holds
+through the Cln2 timer, then the bud grows on its own geometry to `V*(a)·ratio(a)` during the
+budded phase; at division the bud (daughter) detaches while the **mother keeps her body
+(monotonic, never shrinks)**. `t` is in minutes. The single source of the time-view figure.
+"""
+function lineage_timecourse(;
+    n_max::Int=29,
+    Vstar0::Real=36.0,
+    T_cln2::Real=19.0,
+    tau_bud::Real=52.0,
+    m_enlarge::Real=0.45,
+    m_tau::Real=8.0,
+    r0::Real=0.69,
+    r_max::Real=0.90,
+    r_tau::Real=14.0,
+    dt::Real=0.5,
+    rate=qss_growth_rate,
+)
+    Vs(a) = Vstar0 * (1.0 + m_enlarge * (1.0 - exp(-a / m_tau)))
+    ratio(a) = r0 + (r_max - r0) * (1.0 - exp(-a / r_tau))
+    t = 0.0
+    Vm = float(Vstar0)
+    ts = Float64[]
+    vmo = Float64[]
+    vbu = Float64[]
+    rec(vb) = (push!(ts, t); push!(vmo, Vm); push!(vbu, vb))
+    rec(0.0)
+    for a in 0:n_max
+        target = Vs(a)
+        while Vm < target                         # G1 sizer: mother grows to V*(a)
+            Vm = min(target, Vm + max(0.0, rate(Vm)) * dt)
+            t += dt
+            rec(0.0)
+        end
+        te = t + T_cln2                            # Cln2 timer (mother holds, 0 slope)
+        while t < te
+            t += dt
+            rec(0.0)
+        end
+        target_bud = target * ratio(a)             # budded: bud grows to V*(a)·ratio(a)
+        t0 = t
+        te = t + tau_bud
+        while t < te
+            s = (t - t0) / tau_bud
+            t += dt
+            rec(target_bud * s^1.5)
+        end
+        rec(0.0)                                   # division: bud detaches; mother keeps Vm
+    end
+    return (; t=ts, Vmother=vmo, Vbud=vbu)
 end
 
 # ---------------------------------------------------------------------------

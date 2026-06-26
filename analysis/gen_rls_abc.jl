@@ -17,7 +17,7 @@ const ABC_MEAN_BW, ABC_SD_BW = 0.8, 0.8         # ABC kernel bandwidths (divisio
 # summary: simulate M lifespans at θ=(D_crit,kappa,crit_cv) → (mean, sd). seed varies per call.
 function summary(D_crit, kappa, crit_cv, seed)
     ls = lifespan_distribution(M; seed0=seed, D_crit=D_crit, kappa=kappa, crit_cv=crit_cv,
-                               production=1.0, cv=0.05, max_gen=400)
+                               production=1.0, cv=0.05, max_gen=400, segregate=false)
     return mean(ls), std(ls)
 end
 
@@ -75,7 +75,7 @@ pe = (mean(Ds), mean(ks), mean(cs))           # posterior means
 
 # posterior-predictive RLS distribution at the posterior mean (a big sample for the figure)
 pp = lifespan_distribution(20000; seed0=77, D_crit=pe[1], kappa=pe[2], crit_cv=pe[3],
-                           production=1.0, cv=0.05, max_gen=400)
+                           production=1.0, cv=0.05, max_gen=400, segregate=false)
 open(joinpath(here, "rls_abc_predictive.csv"), "w") do io
     println(io, "rls")
     for v in pp

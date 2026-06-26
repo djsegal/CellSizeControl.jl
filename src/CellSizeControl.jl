@@ -400,20 +400,26 @@ end
 # Replaces a hard-coded generation cap with a lifespan that EMERGES from the dynamics.
 # ---------------------------------------------------------------------------
 """
-    replicative_lifespan(; D_crit=32.0, crit_cv=0.55, production=1.0, kappa=0.10, cv=0.05,
-                         alpha0=0.32, alpha_max=0.5, tau=10.0, segregate=true,
+    replicative_lifespan(; D_crit=38.0, crit_cv=0.45, production=1.0, kappa=0.03, cv=0.05,
+                         alpha0=0.32, alpha_max=0.5, tau=10.0, segregate=false,
                          seed=1, max_gen=500) -> Int
 
 The replicative lifespan (number of divisions before senescence) emerging from accumulating
-damage rather than being imposed. Each division adds damage that is **autocatalytic** — the
-production rate rises with the damage already present, `P(D)=production·(1+kappa·D)` (degraded
-proteostasis begets more damage; Lindner 2008, Hughes & Gottschling 2012) — and the mother
-**retains the share she does not segregate** to the bud, `1 - r(a)`, where `r(a)` is the same
-age-eroding division asymmetry that drives daughter size and inherited damage
-([`aging_daughter_fraction`](@ref); `segregate=false` makes the mother keep all of it). The
-mother senesces when her retained damage `D` crosses her viability threshold; the returned
-generation count is the RLS. Because production is autocatalytic, `D` accelerates and the
-lifespan is finite.
+damage rather than being imposed. The default model (the one the paper uses) is
+**non-conserved**: at each division the mother's own damage `D` accumulates autocatalytically
+and is never depleted by what the daughter inherits — the production rate rises with the damage
+already present, `P(D)=production·(1+kappa·D)` (degraded proteostasis begets more damage; Lindner
+2008, Hughes & Gottschling 2012), and the full increment is added to `D`. The daughter inheriting
+a separate `[r/r_max]·D` is tracked elsewhere (the lineage model) and does not subtract from the
+mother's `D` here. The mother senesces when her accumulated damage `D` crosses her viability
+threshold; the returned generation count is the RLS. Because production is autocatalytic, `D`
+accelerates and the lifespan is finite.
+
+The keyword `segregate=true` selects an optional **conserved-partition** variant — not what the
+paper uses — in which the mother retains only the share she does not segregate to the bud,
+scaling the per-division increment by `1 - r(a)`, where `r(a)` is the age-eroding division
+asymmetry ([`aging_daughter_fraction`](@ref)). The default `segregate=false` keeps the
+non-conserved model consistent with the printed equation `P(D)=production·(1+kappa·D)`.
 
 The RLS distribution is set mostly by **cell-to-cell heterogeneity** (`crit_cv`, a lognormal
 spread in the threshold `D_crit` across cells) rather than the small per-division noise `cv`:
@@ -423,15 +429,15 @@ to the measured budding-yeast RLS (mean ≈ 25 divisions, CV ≈ 0.3; Schnitzer 
 threshold/heterogeneity are illustrative, chosen to reproduce that target, not fit per-cell.
 """
 function replicative_lifespan(;
-    D_crit::Real=32.0,
-    crit_cv::Real=0.55,
+    D_crit::Real=38.0,
+    crit_cv::Real=0.45,
     production::Real=1.0,
-    kappa::Real=0.10,
+    kappa::Real=0.03,
     cv::Real=0.05,
     alpha0::Real=0.32,
     alpha_max::Real=0.5,
     tau::Real=10.0,
-    segregate::Bool=true,
+    segregate::Bool=false,
     seed::Int=1,
     max_gen::Int=500,
 )

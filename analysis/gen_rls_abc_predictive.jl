@@ -26,7 +26,7 @@ pp = Int[]
 for _ in 1:NP
     j = rand(rng, 1:n)
     ls = lifespan_distribution(K; seed0=rand(rng, 1:10^7), D_crit=Ds[j], kappa=ks[j],
-                               crit_cv=cs[j], production=1.0, cv=0.05, max_gen=400)
+                               crit_cv=cs[j], production=1.0, cv=0.05, max_gen=400, segregate=false)
     append!(pp, ls)
 end
 open(joinpath(here, "rls_abc_predictive.csv"), "w") do io

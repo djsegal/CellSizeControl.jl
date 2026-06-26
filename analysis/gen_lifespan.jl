@@ -12,8 +12,13 @@ using Statistics: mean, std
 
 const HERE = @__DIR__
 
-# (1) the RLS distribution (default-calibrated to Schnitzer 2022: mean ~25, CV ~0.3)
-samples = lifespan_distribution(5000)
+# Illustrative (pre-ABC) damage parameters for the NON-conserved model (segregate=false), chosen
+# so the emergent RLS lands near the budding-yeast target (mean ~25 divisions, CV ~0.3). These
+# are illustrative defaults for the figure, NOT the ABC-inferred posterior (see gen_rls_abc.jl).
+const ILLUS = (D_crit=38.0, kappa=0.03, crit_cv=0.45, production=1.0, cv=0.05)
+
+# (1) the RLS distribution (illustrative defaults above: mean ~25, CV ~0.3)
+samples = lifespan_distribution(5000; ILLUS..., segregate=false, max_gen=400)
 open(joinpath(HERE, "lifespan_samples.csv"), "w") do io
     println(io, "rls")
     for r in samples
@@ -26,8 +31,8 @@ println("RLS samples: n=", length(samples), "  mean=", round(m; digits=2),
 
 # (2) example damage trajectories: re-derive D(a) under the same defaults for a few cells,
 # so the figure can show the autocatalytic acceleration crossing each cell's threshold.
-function damage_trace(; seed, D_crit=32.0, crit_cv=0.55, production=1.0, kappa=0.10,
-    cv=0.05, alpha0=0.32, alpha_max=0.5, tau=10.0, max_gen=500)
+function damage_trace(; seed, D_crit=ILLUS.D_crit, crit_cv=ILLUS.crit_cv,
+    production=ILLUS.production, kappa=ILLUS.kappa, cv=ILLUS.cv, max_gen=400)
     rng = MersenneTwister(seed)
     Dc = crit_cv > 0 ? D_crit * exp(crit_cv * randn(rng) - crit_cv^2 / 2) : float(D_crit)
     D = 0.0
@@ -35,10 +40,10 @@ function damage_trace(; seed, D_crit=32.0, crit_cv=0.55, production=1.0, kappa=0
     dvals = Float64[0.0]
     a = 0
     while D < Dc && a < max_gen
-        frac = aging_daughter_fraction(a; alpha0=alpha0, alpha_max=alpha_max, tau=tau)
-        kept = 1 - frac
+        # NON-conserved model (segregate=false): the mother's damage accumulates and is never
+        # depleted by the bud; the full autocatalytic increment is added (no 1-r(a) factor).
         noise = cv > 0 ? (1 + cv * randn(rng)) : 1.0
-        D += kept * production * (1 + kappa * D) * max(0.0, noise)
+        D += production * (1 + kappa * D) * max(0.0, noise)
         a += 1
         push!(ages, a)
         push!(dvals, D)

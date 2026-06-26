@@ -47,6 +47,14 @@ export SizeControlRule,
 # ---------------------------------------------------------------------------
 # Control rules: given the birth volume Vb, the (deterministic) division volume.
 # ---------------------------------------------------------------------------
+"""
+    SizeControlRule
+
+Abstract supertype for a cell-size-control rule: a map from birth volume `Vb` to division
+volume `Vd` via [`division_volume`](@ref). Concrete subtypes are [`TimerRule`](@ref),
+[`AdderRule`](@ref), [`SizerRule`](@ref), [`InhibitorDilutionSizer`](@ref),
+[`SaturatingTimerRule`](@ref), [`LinearSizeControl`](@ref), and [`Whi5SBFSwitch`](@ref).
+"""
 abstract type SizeControlRule end
 
 """Timer: divide after a fixed time → `Vd = fold·Vb` (fold = e^{αT}; =2 at doubling).
@@ -84,9 +92,24 @@ struct SaturatingTimerRule <: SizeControlRule
     asymptote::Float64
 end
 
+"""
+    setpoint_volume(rule) -> Float64
+
+The target division volume `V*` of a size-controlling rule (the sizers and the bistable
+switch): `SizerRule`'s `Vstar`, the inhibitor-dilution `W/thresh`, or the emergent
+`Whi5SBFSwitch` set-point. Defined only for rules that have a fixed set-point.
+"""
 setpoint_volume(r::SizerRule) = r.Vstar
 setpoint_volume(r::InhibitorDilutionSizer) = r.W / r.thresh
 
+"""
+    division_volume(rule, Vb) -> Float64
+
+The (deterministic) division volume `Vd` for a [`SizeControlRule`](@ref) given birth volume
+`Vb`: `fold·Vb` for a timer, `Vb + Δ` for an adder, the set-point `V*` for a sizer, and
+`α·Vb + β` for the linear map. The least-squares slope of `Vd` on `Vb` is the size-control
+discriminator ([`size_control_slope`](@ref)).
+"""
 division_volume(r::TimerRule, Vb) = r.fold * Vb
 division_volume(r::AdderRule, Vb) = Vb + r.delta
 division_volume(r::SizerRule, Vb) = r.Vstar
@@ -135,7 +158,7 @@ division_volume(r::LinearSizeControl, Vb) = r.alpha * Vb + r.beta
 principles. A double-negative feedback (Whi5 represses SBF; active SBF inactivates Whi5)
 makes SBF activity bistable; growth dilutes Whi5 (`c = W/V`) until the OFF/G1 state vanishes
 at a saddle-node `c*`, so the set-point `V* = W/c*` emerges rather than being imposed. Use
-the keyword constructor [`Whi5SBFSwitch(W; ...)`](@ref); `Vstar` is precomputed."""
+the keyword constructor [`Whi5SBFSwitch`](@ref); `Vstar` is precomputed."""
 struct Whi5SBFSwitch <: SizeControlRule
     W::Float64        # total Whi5 (size-independent amount synthesized per cycle)
     beta::Float64     # max SBF activation rate
@@ -445,6 +468,15 @@ end
 # Surface-area-limited QSS growth (the course VOL_Growth law; Altenburg et al. 2019
 # constants), per minute: dV/dt = (k_up·4πr² − k_cons·V), r = (3V/4π)^(1/3).
 const _K_UP, _K_CONS, _C_ISS = 0.23, 0.27, 319.4
+
+"""
+    qss_growth_rate(V) -> Float64
+
+Surface-area-limited single-cell volume growth rate `dV/dt` (per minute) at volume `V`:
+`(k_up·4πr² − k_cons·V)` with `r = (3V/4π)^(1/3)` (the quasi-steady-state uptake-minus-
+consumption law; Altenburg et al. 2019 constants). Pass as the `rate` to [`grow_to`](@ref) /
+[`cell_cycle`](@ref); contrast [`exponential_growth_rate`](@ref).
+"""
 function qss_growth_rate(V)
     return 60.0 * (_K_UP * 4.0 * pi * (3.0 * V / (4.0 * pi))^(2 / 3) - _K_CONS * V) / _C_ISS
 end

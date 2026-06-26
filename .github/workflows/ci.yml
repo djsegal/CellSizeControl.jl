@@ -5,11 +5,11 @@ on:
   pull_request:
     branches: [main]
 
-# Tests the TranscriptionMultiplier package. runtests.jl reads ../data and
-# ../output relative to the package, so we check out the whole repo and run from
-# the transcription_multiplier/ directory. The joint multi-dataset headline test
-# skips gracefully when data/external/ is absent (not committed), so CI stays
-# green without third-party downloads; the L1 fit-reproduction test always runs.
+# Tests the CellSizeControl package from the repo root. The package is
+# self-contained (Random + Statistics only) with no external data, so CI just
+# instantiates and runs Pkg.test() -- the three-layer suite (L1 analytic /
+# L2 reference / L3 cross-source) plus the Aqua, ExplicitImports, and JET
+# quality gates declared in the test target.
 jobs:
   test:
     name: Julia ${{ matrix.julia-version }}
@@ -24,11 +24,4 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
       - uses: julia-actions/cache@v2
-      - name: Instantiate and test
-        working-directory: .
-        run: |
-          julia --project=. -e '
-            using Pkg
-            Pkg.instantiate()
-            include("runtests.jl")
-          '
+      - uses: julia-actions/julia-runtest@v1

@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import norm
 
-from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+from _pubstyle import apply_style, clean_hexbin, BLUE, VERM, GREEN, OKABE
 
 HERE = Path(__file__).resolve().parent
 MEAN_T, SD_T = 26.6, 9.7  # McCormick 2015 WT pooled
@@ -41,7 +41,7 @@ def main() -> None:
                  y=0.99, fontsize=12)
 
     # (a) joint posterior (D_crit, kappa): the identifiability ridge
-    hb = axA.hexbin(D, k, gridsize=34, cmap="Blues", mincnt=1)
+    hb = clean_hexbin(axA, D, k, gridsize=24, cmap="Blues", mincnt=1)
     fig.colorbar(hb, ax=axA, pad=0.02, label="posterior density")
     axA.text(0.04, 0.93, rf"ridge corr $\rho={rho:.2f}$", transform=axA.transAxes,
              fontsize=10, color=VERM, fontweight="bold")

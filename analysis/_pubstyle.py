@@ -51,3 +51,18 @@ def apply_style() -> None:
             "savefig.bbox": "tight",
         }
     )
+
+
+def clean_hexbin(ax, x, y, **kwargs):
+    """A ``hexbin`` that tiles cleanly.
+
+    Plain ``ax.hexbin`` draws each hexagon as a separate edgeless patch, so
+    matplotlib's antialiasing opens thin seams between neighbours and the
+    low-count (near-white) hexagons blend into the background -- the grid then
+    looks gapped, mis-sized, or overlapping. Drawing each hexagon's edge in its
+    own face colour with a small linewidth fills those seams into a seamless
+    tiling. Any keyword (gridsize, cmap, mincnt, ...) passes straight through.
+    """
+    kwargs.setdefault("edgecolors", "face")
+    kwargs.setdefault("linewidths", 0.4)
+    return ax.hexbin(x, y, **kwargs)

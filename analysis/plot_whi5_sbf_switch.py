@@ -45,7 +45,7 @@ def main() -> None:
 
     apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
-    fig.suptitle("A bistable Whi5:SBF switch gives the inhibitor-dilution sizer", y=0.99,
+    fig.suptitle("A bistable Whi5:SBF switch implements the inhibitor-dilution sizer", y=0.99,
                  fontsize=12)
 
     # (a) bifurcation / hysteresis

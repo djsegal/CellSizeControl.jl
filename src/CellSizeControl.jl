@@ -23,6 +23,7 @@ export SizeControlRule,
     SizerRule,
     InhibitorDilutionSizer,
     SaturatingTimerRule,
+    LinearSizeControl,
     Whi5SBFSwitch,
     division_volume,
     setpoint_volume,
@@ -109,6 +110,17 @@ function saturating_timer_buds(rule::SaturatingTimerRule; V0::Real=20.0, n::Int=
     end
     return buds
 end
+
+"""Linear size-control map (Amir 2014): `Vd = α·Vb + β`. The continuous family that unifies the
+discrete rules — sizer (α=0, β=V*), adder (α=1, β=Δ), timer (α=2, β=0) — so a single `α` sweeps
+the sizer↔adder↔timer axis. The measured `Vd`-vs-`Vb` slope recovers `α`; a lineage with
+division asymmetry `f` (daughter fraction) is size-homeostatic iff `α·f < 1` (i.e. `α < 1/f`)."""
+struct LinearSizeControl <: SizeControlRule
+    alpha::Float64
+    beta::Float64
+end
+
+division_volume(r::LinearSizeControl, Vb) = r.alpha * Vb + r.beta
 
 # ---------------------------------------------------------------------------
 # Mechanistic Whi5:SBF bistable Start switch (the inhibitor-dilution sizer from

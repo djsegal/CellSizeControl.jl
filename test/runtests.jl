@@ -76,6 +76,24 @@ using Statistics: mean, std
         @test isapprox(size_control_slope(s_sw.Vb, s_sw.Vd), 0.0; atol=0.3)
     end
 
+    # ---- the continuous linear size-control map Vd = αVb + β (Amir 2014) ----
+    # one knob α sweeps sizer(0)→adder(1)→timer(2); the recovered slope must track α, and a
+    # lineage with daughter fraction f is homeostatic iff α·f < 1.
+    @testset "LinearSizeControl — slope tracks α; homeostasis iff α·f<1" begin
+        @test division_volume(LinearSizeControl(0.7, 12.0), 20.0) == 0.7 * 20.0 + 12.0
+        for α in (0.0, 0.5, 1.0, 1.5)
+            s = simulate_lineage(LinearSizeControl(α, 20.0); V0=20.0, n=800, cv=0.06, seed=11)
+            @test isapprox(size_control_slope(s.Vb, s.Vd), α; atol=0.2)
+        end
+        # homeostasis boundary at α = 1/f: α·f<1 stays bounded; α·f>1 runs away
+        stable = simulate_lineage(LinearSizeControl(1.5, 20.0); daughter_fraction=0.5, n=200,
+                                  cv=0.0, seed=12)                       # α·f = 0.75 < 1
+        @test maximum(stable.Vb) < 1e3
+        runaway = simulate_lineage(LinearSizeControl(2.5, 20.0); daughter_fraction=0.5, n=200,
+                                   cv=0.0, seed=13)                      # α·f = 1.25 > 1
+        @test last(runaway.Vb) > 10 * first(runaway.Vb)
+    end
+
     # ---- L2: reference behaviour — the timer collapses, the sizer is stable ----
     # (reproduces the yeast-wcm CellSize finding: a sub-doubling timer drives
     #  daughters toward 0; the inhibitor-dilution sizer holds them at V*/2.)

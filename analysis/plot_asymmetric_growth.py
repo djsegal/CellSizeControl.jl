@@ -124,6 +124,22 @@ def panel_maternal(ax):
     ax.text(0.955, 0.07,
             "Daughter: $V_d = r(g)\\,V_m,\\ r{:}\\,0.7{\\to}0.9$",
             transform=ax.transAxes, color=VERM, fontsize=8.5, va="bottom", ha="right")
+    # Published reference for the DIRECTION + magnitude of the trend: daughters of older
+    # mothers are born larger (Johnston 1966, Antonie van Leeuwenhoek 32:94 -- directional).
+    # Yang et al. 2011 (Cell Cycle 10:144, Table 1 / Fig 2A) quantify it: virgin daughters
+    # ~6.9 um diameter -> terminal ~11.2 um, ~4x volume over the lifespan. Diameter-based and
+    # not directly overlayable on this fL axis, so it is stated as a reference trend, with an
+    # arrow marking the published direction (small early -> large late), not a fake curve.
+    g_late = max(gen)
+    d_early, d_late = dau[gen.index(min(gen))], dau[gen.index(g_late)]
+    ax.annotate(
+        "Daughters of old mothers are\nborn larger (Johnston 1966;\n"
+        "Yang 2011, ~6.9 → 11 µm, ~4× vol)",
+        xy=(g_late * 0.86, d_late * 0.965), xycoords="data",
+        xytext=(g_late * 0.40, (d_early + d_late) * 0.5), textcoords="data",
+        fontsize=7.6, color="0.30", ha="left", va="center",
+        arrowprops=dict(arrowstyle="->", color="0.45", lw=1.0,
+                        connectionstyle="arc3,rad=-0.15"))
     ax.set_xlabel("Maternal replicative age (generations)")
     ax.set_ylabel("Volume (fL)")
     ax.set_title("(b) Maternal-age asymmetry, to the replicative lifespan", fontsize=11)

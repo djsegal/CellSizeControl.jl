@@ -44,14 +44,23 @@ def main():
     fig.suptitle("The replicative lifespan emerges from autocatalytic damage", y=0.99,
                  fontsize=12)
 
-    # (a) RLS distribution
+    # (a) RLS distribution. Published reference target: McCormick et al. 2015 (Cell Metab
+    # 22:895) wild-type RLS, mean 26.6 with SD 9.7 (CV 0.365). These are not the main-text
+    # headline numbers (the 780,000-daughter dissection) -- they are pooled/inferred from the
+    # two WT controls in the supplemental data, and are shown here only as a summary target
+    # band, not a per-cell overlay (the per-cell RLS distribution is not publicly deposited).
+    MC_MEAN, MC_SD = 26.6, 9.7
     axA.hist(rls, bins=np.arange(0, rls.max() + 2) - 0.5, color=BLUE, alpha=0.85,
              edgecolor="white", linewidth=0.3)
-    axA.axvline(m, color=VERM, lw=2.0, label=f"Mean {m:.1f} divisions")
-    axA.axvspan(24, 26, color="0.6", alpha=0.18, label="Schnitzer 2022 (~24–26)")
+    axA.axvspan(MC_MEAN - MC_SD, MC_MEAN + MC_SD, color="0.6", alpha=0.16,
+                label=f"McCormick 2015 WT, suppl. data\n(mean {MC_MEAN}, SD {MC_SD}, CV "
+                      f"{MC_SD / MC_MEAN:.2f})")
+    axA.axvline(MC_MEAN, color="0.35", lw=1.6, ls=":")
+    axA.axvline(m, color=VERM, lw=2.0,
+                label=f"Model mean {m:.1f} (CV {sd / m:.2f})")
     axA.set(xlabel="Replicative lifespan (divisions)", ylabel="Cells",
-            title=f"(a) Emergent RLS distribution (CV = {sd / m:.2f})")
-    axA.legend(loc="upper right", frameon=False, fontsize=9)
+            title="(a) Emergent RLS distribution vs published target")
+    axA.legend(loc="upper right", frameon=False, fontsize=8.5)
     axA.set_xlim(0, np.percentile(rls, 99.5) + 3)
 
     # (b) damage trajectories accelerating to each cell's threshold

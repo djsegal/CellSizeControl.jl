@@ -37,20 +37,44 @@ def main():
     fig.suptitle("The fitness face of replicative aging (same age-eroding asymmetry)",
                  y=0.99, fontsize=12)
 
+    # Panel (a): inherited damage is illustrative (arbitrary units) -- there is no published
+    # per-generation damage curve to target, so it is honestly labelled as such, no fake data.
     axA.plot(gen, dmg, "-", lw=2.0, color=DAMAGE, solid_capstyle="round")
     axA.set(xlabel="Maternal replicative age (generations)",
-            ylabel="Daughter inherited damage (a.u.)",
+            ylabel="Daughter inherited damage (illustrative, a.u.)",
             title="(a) Daughters of old mothers inherit more damage")
     axA.set_xlim(0, max(gen) + 1)
     axA.grid(axis="y", which="major", color="0.9", lw=0.7)
     axA.set_axisbelow(True)
 
-    axB.plot(gen, cyc, "-", lw=2.0, color=CYCLE, solid_capstyle="round")
+    # Panel (b): the cell-cycle-slows-with-age trend IS published. Reference targets (the
+    # DIRECTION + magnitude, not a per-cell overlay -- model magnitudes are illustrative):
+    #   Egilmez & Jazwinski 1989 (J Bacteriol 171:37): generation time rises ~5-6x by end of life;
+    #   Fehrmann/Charvin 2013 (Cell Rep 5:1589): 78.3 min in young cells, then abrupt senescence entry;
+    #   Moreno et al. 2019 (eLife 8:e48240): the lengthening is G1-specific (Whi5 ~3x in final cycles).
+    axB.plot(gen, cyc, "-", lw=2.0, color=CYCLE, solid_capstyle="round",
+             label="Model cycle time (illustrative)")
+    # mark the published young-cell anchor (Fehrmann/Charvin 2013, 78.3 min) as a reference line
+    axB.axhline(78.3, color="0.45", lw=1.2, ls="--",
+                label="Fehrmann/Charvin 2013: 78.3 min (young)")
     axB.set(xlabel="Maternal replicative age (generations)", ylabel="Cycle time (min)",
             title="(b) The cell cycle slows with replicative age")
     axB.set_xlim(0, max(gen) + 1)
     axB.grid(axis="y", which="major", color="0.9", lw=0.7)
     axB.set_axisbelow(True)
+    # annotate the published direction/magnitude as a reference trend, placed in the open
+    # lower-right whitespace so it clears both the model curve and the 78.3-min reference line
+    axB.annotate(
+        "Cycle lengthens with age (published trend):\n"
+        "~5–6× by end of life (Egilmez & Jazwinski 1989);\n"
+        "G1-specific (Moreno 2019)",
+        xy=(max(gen) * 0.78, cyc[int(len(cyc) * 0.78)]), xycoords="data",
+        xytext=(0.50, 0.30), textcoords="axes fraction",
+        fontsize=7.4, color="0.30", ha="left", va="center",
+        arrowprops=dict(arrowstyle="->", color="0.45", lw=1.0,
+                        connectionstyle="arc3,rad=-0.2"))
+    axB.set_ylim(min(cyc) - 4, max(cyc) * 1.04)
+    axB.legend(loc="upper left", frameon=False, fontsize=8.0)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = HERE / "fitness_face.png"

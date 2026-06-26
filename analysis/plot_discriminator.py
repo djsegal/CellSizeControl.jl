@@ -38,14 +38,29 @@ def main():
     apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
 
+    # Soifer & Amir 2016 (Curr Biol 26:356) reference slope targets for the three regimes.
+    # Drawn as faint reference lines through the data cloud's centroid so the model slope
+    # can be read against the published target (sizer 0 / adder 1 / timer 2).
+    SOIFER = {"sizer": 0.0, "adder": 1.0, "timer": 2.0}
     for rule in ("timer", "adder", "sizer"):
         vb, vd = by_rule[rule]
+        vb = np.asarray(vb, float)
+        vd = np.asarray(vd, float)
         s = np.polyfit(vb, vd, 1)[0]
         axA.scatter(vb, vd, s=6, color=COL[rule], alpha=0.5,
-                    label=f"{rule} (slope {s:.2f})")
+                    label=f"{rule} (model slope {s:.2f})")
+        # reference target line: slope = Soifer-Amir value, anchored at the cloud centroid
+        ref = SOIFER[rule]
+        xc, yc = vb.mean(), vd.mean()
+        xr = np.array([vb.min(), vb.max()])
+        axA.plot(xr, yc + ref * (xr - xc), ls=(0, (4, 3)), lw=1.3, color=COL[rule],
+                 alpha=0.9, zorder=2)
+    # one legend entry naming the reference, color-neutral
+    axA.plot([], [], ls=(0, (4, 3)), lw=1.3, color="0.35",
+             label="Soifer-Amir 2016 targets:\nsizer 0 / adder 1 / timer 2")
     axA.set(xlabel=r"Birth volume $V_b$", ylabel=r"Division volume $V_d$",
             title="(a) The size-control slope discriminator")
-    axA.legend(loc="upper left", frameon=False, fontsize=9)
+    axA.legend(loc="upper left", frameon=False, fontsize=8.5)
 
     axB.plot(gen, tvb, "-", lw=2.0, color=VERM, label="Sub-doubling timer (collapses)")
     axB.plot(gen, svb, "-", lw=2.0, color=BLUE, label="Inhibitor-dilution sizer (stable)")

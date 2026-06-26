@@ -21,7 +21,8 @@ from scipy.stats import norm
 from _pubstyle import apply_style, clean_hexbin, BLUE, VERM, GREEN, OKABE
 
 HERE = Path(__file__).resolve().parent
-MEAN_T, SD_T = 26.6, 9.7  # McCormick 2015 WT pooled
+MEAN_T, SD_T = 26.6, 9.7  # McCormick 2015 WT, supplemental data (pooled/inferred from the
+# two WT controls; NOT the main-text 780,000-daughter headline). Shown as a summary target.
 
 
 def main() -> None:
@@ -55,7 +56,7 @@ def main() -> None:
              label=f"model predictive\n(mean {pp.mean():.1f}, SD {pp.std():.1f})")
     xs = np.linspace(0, pp.max(), 300)
     axB.plot(xs, norm.pdf(xs, MEAN_T, SD_T), "-", lw=2.6, color=VERM,
-             label=f"McCormick 2015 WT\n(mean {MEAN_T}, SD {SD_T})")
+             label=f"McCormick 2015 WT, suppl. data\n(mean {MEAN_T}, SD {SD_T})")
     axB.axvline(pp.mean(), color=BLUE, lw=1.4, ls="--")
     axB.axvline(MEAN_T, color=VERM, lw=1.4, ls=":")
     axB.set(xlabel="Replicative lifespan (divisions)", ylabel="Probability density",

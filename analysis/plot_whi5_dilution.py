@@ -19,8 +19,12 @@ import matplotlib.pyplot as plt
 from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
 
 HERE = Path(__file__).resolve().parent
-# Okabe-Ito: daughter / threshold / mother
-THRESH, VSTAR = 1.5, 40.0
+# Okabe-Ito: daughter / threshold / mother. The Start threshold here is the SAME calibrated
+# setpoint as the bistable-switch figure: theta = c* = 0.449, with total dose W = 18, giving
+# V* = W/theta = 40 fL. (Earlier this schematic used W = 60, theta = 1.5 for the same V* = 40,
+# which read as inconsistent with the switch figure's c* ~ 0.45 even though both describe the
+# identical setpoint -- only the Whi5 dose, and hence the concentration scale, differed.)
+THRESH, VSTAR = 0.449, 40.0
 
 
 def main():
@@ -52,7 +56,8 @@ def main():
         axA.plot(t[c], C[c], "-", lw=2.4, color=col[c],
                  label=lbl[c].format(step=step))
         axA.plot([t[c][-1]], [C[c][-1]], "o", ms=7, color=col[c], zorder=5)
-    axA.axhline(THRESH, color=VERM, lw=1.8, ls="--", label=r"Start threshold $\theta$")
+    axA.axhline(THRESH, color=VERM, lw=1.8, ls="--",
+                label=r"Start threshold $\theta=c^\ast\approx0.45$")
     axA.set(xlabel="Time in G1 (min)", ylabel=r"Inhibitor concentration $[W]=W/V$",
             title="(a) Whi5 dilutes to the Start threshold")
     axA.legend(loc="upper right", frameon=False, fontsize=9)

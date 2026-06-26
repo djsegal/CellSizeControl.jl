@@ -10,7 +10,13 @@ Pkg.activate(joinpath(@__DIR__, ".."); io=devnull)
 using CellSizeControl
 
 const HERE = @__DIR__
-const W, THRESH = 60.0, 1.5          # InhibitorDilutionSizer(W, θ) → V* = W/θ = 40
+# Use the SAME calibrated setpoint as the bistable-switch figure (whi5_sbf_switch):
+# there the OFF-state saddle-node sits at c* = 0.449 and the total dose is W = 18, giving
+# V* = W/c* = 40 fL. Reusing (W, θ) = (18, c*) here keeps the dilution schematic's threshold
+# numerically identical to that figure's setpoint (θ ≡ c*), so the two panels can't read as
+# contradictory. V* (=40 fL) and the daughter Vb=30 → ~22-min sizer step are unchanged, since
+# [Whi5] = W/V scales linearly in W and the crossing volume V* = W/θ is the same.
+const W, THRESH = 18.0, 0.449        # InhibitorDilutionSizer(W, θ=c*) → V* = W/θ = 40
 const VSTAR = W / THRESH
 
 function dilute_to_start(Vb; dt=0.1, tmax=400.0)

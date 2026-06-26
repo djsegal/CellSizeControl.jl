@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""Gallery (CC-5): the inhibitor-dilution sizer from a bistable mechanism (from
+gen_whi5_sbf_switch.jl). A Whi5:SBF double-negative feedback makes SBF activity bistable;
+growth dilutes Whi5 (c = W/V), and the OFF/G1 state disappears at the saddle-node c*, firing
+Start. The emergent set-point V* = W/c* is exactly linear in W — the phenomenological
+inhibitor-dilution law V* = W/theta, with theta = c* now derived, not imposed. Okabe-Ito.
+Run via a venv with matplotlib.
+"""
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+BLUE, VERM, GREEN, GREY = "#0072b2", "#d55e00", "#009e73", "#999999"  # Okabe-Ito
+HERE = Path(__file__).resolve().parent
+
+
+def main() -> None:
+    branches: dict[str, tuple[list[float], list[float]]] = {
+        "off": ([], []),
+        "unstable": ([], []),
+        "on": ([], []),
+    }
+    with open(HERE / "whi5_sbf_bifurcation.csv") as fh:
+        for row in csv.DictReader(fh):
+            c, x = float(row["c"]), float(row["x"])
+            branches[row["branch"]][0].append(c)
+            branches[row["branch"]][1].append(x)
+    cstar = min(branches["off"][0])  # lower fold = OFF saddle-node
+
+    W, Vmech, Vlaw, theta = [], [], [], None
+    with open(HERE / "whi5_sbf_setpoint.csv") as fh:
+        for row in csv.DictReader(fh):
+            W.append(float(row["W"]))
+            Vmech.append(float(row["Vstar_mech"]))
+            Vlaw.append(float(row["Vstar_law"]))
+            theta = float(row["theta"])
+
+    plt.rcParams.update({"font.size": 11, "figure.dpi": 150, "savefig.dpi": 150,
+                         "axes.spines.top": False, "axes.spines.right": False})
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
+    fig.suptitle("A Bistable Whi5:SBF Switch Gives the Inhibitor-Dilution Sizer", y=0.99,
+                 fontsize=12)
+
+    # (a) bifurcation / hysteresis
+    axA.plot(branches["off"][0], branches["off"][1], "-", lw=2.6, color=BLUE,
+             label="OFF / G1 (stable)")
+    axA.plot(branches["on"][0], branches["on"][1], "-", lw=2.6, color=GREEN,
+             label="ON / Start fired (stable)")
+    axA.plot(branches["unstable"][0], branches["unstable"][1], "--", lw=1.8, color=GREY,
+             label="unstable threshold")
+    axA.axvline(cstar, color=VERM, lw=1.8, ls=":")
+    axA.text(cstar + 0.07, 0.72, r"Start at $c^\ast=W/V^\ast$", color=VERM, fontsize=9,
+             ha="left", va="center")
+    axA.annotate("", xy=(cstar + 0.04, 0.30), xytext=(2.55, 0.30),
+                 arrowprops=dict(arrowstyle="->", color="0.35", lw=1.6))
+    axA.text(1.55, 0.35, "growth dilutes Whi5", fontsize=9, color="0.35", ha="center")
+    axA.set(xlabel=r"Whi5 Concentration $c=W/V$", ylabel="SBF Activity (Start commitment)",
+            title="(a) Whi5 Dilution Drives a Bistable Switch", xlim=(0, 3.0), ylim=(-0.03, 1.05))
+    axA.legend(loc="lower right", frameon=False, fontsize=9)
+
+    # (b) emergent sizer law V* = W/theta
+    grid = [0] + W
+    axB.plot(grid, [g / theta for g in grid], "-", lw=2.2, color=GREY,
+             label=r"law $V^\ast=W/\theta$  ($\theta=c^\ast$)")
+    axB.plot(W, Vmech, "o", ms=8, color=BLUE, zorder=5, label="mechanistic switch")
+    axB.set(xlabel="Total Whi5 per Cycle $W$", ylabel=r"Emergent Set-Point $V^\ast$ (fL)",
+            title=r"(b) $V^\ast$ Is Exactly Linear in $W$", xlim=(0, max(W) * 1.05),
+            ylim=(0, max(Vmech) * 1.05))
+    axB.legend(loc="upper left", frameon=False, fontsize=9)
+    axB.text(0.97, 0.05, rf"$\theta=c^\ast={theta:.3f}$", transform=axB.transAxes,
+             ha="right", fontsize=9, color="0.35")
+
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    out = HERE / "whi5_sbf_switch.png"
+    fig.savefig(out, bbox_inches="tight")
+    print("wrote", out)
+
+
+if __name__ == "__main__":
+    main()

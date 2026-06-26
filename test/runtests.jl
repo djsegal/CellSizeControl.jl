@@ -3,6 +3,7 @@ using Test
 using Aqua
 using ExplicitImports
 using JET
+using Statistics: mean, std
 
 @testset "CellSizeControl" begin
     # ---- Q: package-quality gates (release-readiness) ----
@@ -85,6 +86,21 @@ using JET
         # the SAME erosion drives inherited DAMAGE: daughters of old mothers more damaged
         @test L.Ddaughter[end] > L.Ddaughter[1]                 # damage rises with maternal age
         @test issorted(L.Ddaughter)                             # monotone (size + fitness, one fn)
+
+        # stochastic-AGE refinement: damage_cv adds noise to the per-cycle damage production,
+        # so the inherited damage varies cell-to-cell (a real distribution); damage_cv=0 is
+        # deterministic (seed-independent). Check at a fixed late generation across seeds.
+        det1 =
+            simulate_aging_lineage(SizerRule(60.0); n=20, damage_cv=0.0, seed=1).Ddaughter
+        det2 =
+            simulate_aging_lineage(SizerRule(60.0); n=20, damage_cv=0.0, seed=7).Ddaughter
+        @test det1 == det2                                      # no damage noise → deterministic
+        noisy = [
+            simulate_aging_lineage(SizerRule(60.0); n=20, damage_cv=0.3, seed=s).Ddaughter[end]
+            for s in 1:200
+        ]
+        @test std(noisy) > 0.05 * mean(noisy)                   # damage_cv>0 → real spread
+        @test isapprox(mean(noisy), det1[end]; rtol=0.1)        # noise is mean-preserving-ish
 
         # no erosion (alpha0 == alpha_max) → constant daughter size
         flat = simulate_aging_lineage(

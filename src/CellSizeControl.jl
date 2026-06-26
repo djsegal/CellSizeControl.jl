@@ -162,6 +162,7 @@ end
 
 """
     simulate_aging_lineage(rule; V0=5.0, n=25, alpha0=0.32, alpha_max=0.5, tau=10.0,
+                           damage_form=1.0, damage_cv=0.0,
                            enlarge_max=0.0, enlarge_tau=8.0, phantom_founder=false,
                            cv=0.0, seed=1)
         -> (; gen, Vbirth, Vdivision, Vdaughter, Ddaughter, phantom)
@@ -188,6 +189,7 @@ function simulate_aging_lineage(
     alpha_max::Real=0.5,
     tau::Real=10.0,
     damage_form::Real=1.0,
+    damage_cv::Real=0.0,
     enlarge_max::Real=0.0,
     enlarge_tau::Real=8.0,
     phantom_founder::Bool=false,
@@ -230,7 +232,10 @@ function simulate_aging_lineage(
         # Kennedy direction), NOT a slice carved out of the mother. The same `frac(a)` sets
         # how much accrued damage the daughter inherits -- one mechanism, two faces.
         vdau = frac * d
-        dm += damage_form
+        # per-cycle damage production; damage_cv adds multiplicative noise (floored at 0, so
+        # production is non-negative) → inherited damage gets a real distribution across an
+        # ensemble. damage_cv=0 (default) keeps the deterministic per-generation accrual.
+        dm += damage_form * (damage_cv > 0 ? max(0.0, 1 + damage_cv * randn(rng)) : 1.0)
         push!(gen, a + 1)
         push!(Vbirth, vm)
         push!(Vdivision, d)

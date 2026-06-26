@@ -102,6 +102,21 @@ using ExplicitImports
         @test issorted(enl.Vbirth)                             # mother at Start monotonic non-decreasing
         @test enl.Vbirth[2:end] == enl.Vdivision[1:(end - 1)]  # division size carried over, no slice lost
 
+        # Kennedy 1994 (magnitude): across the replicative lifespan (~25–30 divisions;
+        # Schnitzer 2022), an old mother's daughters are substantially larger than a young
+        # mother's — here the late daughter is ≳1.4× the first.
+        ken = simulate_aging_lineage(
+            SizerRule(60.0);
+            n=30,
+            alpha0=0.32,
+            alpha_max=0.5,
+            tau=8.0,
+            enlarge_max=0.45,
+            cv=0.0,
+        )
+        @test ken.Vdaughter[end] > 1.4 * ken.Vdaughter[1]
+        @test length(ken.gen) == 30                            # spans the replicative lifespan
+
         # phantom founder: prepend gen 0 = the founder's OWN birth (born at V0), so the
         # lineage is uniform (every cell born a daughter) without shifting the real gens
         ph = simulate_aging_lineage(

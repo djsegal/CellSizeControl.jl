@@ -35,13 +35,14 @@ def main() -> None:
             branches[row["branch"]][1].append(x)
     cstar = min(branches["off"][0])  # lower fold = OFF saddle-node
 
-    W, Vmech, Vlaw, theta = [], [], [], None
+    W, Vmech, Vlaw, thetas = [], [], [], []
     with open(HERE / "whi5_sbf_setpoint.csv") as fh:
         for row in csv.DictReader(fh):
             W.append(float(row["W"]))
             Vmech.append(float(row["Vstar_mech"]))
             Vlaw.append(float(row["Vstar_law"]))
-            theta = float(row["theta"])
+            thetas.append(float(row["theta"]))
+    theta = sum(thetas) / len(thetas)  # representative c* (constant to <1e-3 across W)
 
     apply_style()
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.8))

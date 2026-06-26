@@ -72,8 +72,12 @@ function mother_lineage(;
     end
     for a in 0:n_max
         Vs = Vstar(a)
-        t_sizer, _ = grow_to(Vm, Vs; rate=rate)        # mother grows from her kept body to V*(a)
-        G1 = t_sizer + T_cln2
+        # The mother is born at/near V* every cycle and is timer-dominated (Di Talia 2007):
+        # her G1 is essentially the fixed Cln2 timer. (We deliberately do NOT add the tiny
+        # "catch up to the slowly-rising V*" sizer step here: it is a per-generation
+        # discretization artifact that puts a spurious knee at gen 2, because only the founder
+        # starts exactly at V*(0) with a zero sizer step.)
+        G1 = T_cln2
         # CORRECT division accounting: the mother KEEPS her cell body (monotonic, never
         # shrinks); only the BUD pinches off as the daughter. "Old mothers -> larger
         # daughters" (Kennedy 1994) comes from the bud growing as a rising fraction ratio(a)
@@ -86,7 +90,7 @@ function mother_lineage(;
         # mother's accrued damage she inherits: young -> rejuvenated, old -> larger AND more
         # damaged (Kennedy: old-mother daughters reduced lifespan). One mechanism, two faces.
         Ddaughter = (ratio(a) / r_max) * Dm
-        cycle = G1 + tau_bud + dmg_slow * Dm           # cycle slows with age VIA accumulated damage
+        cycle = G1 + tau_bud + dmg_slow * Dm           # timer G1 + budded + damage-driven slowing
         push!(
             gens,
             (;
@@ -214,7 +218,7 @@ function main()
         "exponential growth self-stabilizes -- no collapse, no per-compartment trick needed.",
     )
     open(joinpath(@__DIR__, "cs_da_lineage.csv"), "w") do io
-        println(io, "gen,Vdaughter,Vmother,G1,cycle")
+        println(io, "gen,Vdaughter,Vmother,G1,cycle,Ddaughter")
         for r in L
             println(
                 io,
@@ -227,6 +231,8 @@ function main()
                 round(r.G1; digits=3),
                 ",",
                 round(r.cycle; digits=3),
+                ",",
+                round(r.Ddaughter; digits=3),
             )
         end
     end

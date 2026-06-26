@@ -1,0 +1,8 @@
+metric,value
+N_lineages,1000000
+n_pairs,30000000
+daughter_size_mean,40.2723
+daughter_size_cv,0.2231
+daughter_damage_mean,7.3617
+daughter_damage_cv,0.6024
+mother_daughter_size_corr,0.9842

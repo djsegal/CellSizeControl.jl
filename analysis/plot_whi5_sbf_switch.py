@@ -44,9 +44,9 @@ def main() -> None:
             theta = float(row["theta"])
 
     apply_style()
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.8))
     fig.suptitle("A bistable Whi5:SBF switch implements the inhibitor-dilution sizer", y=0.99,
-                 fontsize=12)
+                 fontsize=14)
 
     # (a) bifurcation / hysteresis
     axA.plot(branches["off"][0], branches["off"][1], "-", lw=2.6, color=BLUE,
@@ -56,14 +56,14 @@ def main() -> None:
     axA.plot(branches["unstable"][0], branches["unstable"][1], "--", lw=1.8, color=GREY,
              label="Unstable threshold")
     axA.axvline(cstar, color=VERM, lw=1.8, ls=":")
-    axA.text(cstar + 0.07, 0.72, r"Start at $c^\ast=W/V^\ast$", color=VERM, fontsize=9,
+    axA.text(cstar + 0.07, 0.72, r"Start at $c^\ast=W/V^\ast$", color=VERM, fontsize=11,
              ha="left", va="center")
     axA.annotate("", xy=(cstar + 0.04, 0.30), xytext=(2.55, 0.30),
                  arrowprops=dict(arrowstyle="->", color="0.35", lw=1.6))
-    axA.text(1.55, 0.35, "Growth dilutes Whi5", fontsize=9, color="0.35", ha="center")
+    axA.text(1.55, 0.35, "Growth dilutes Whi5", fontsize=11, color="0.35", ha="center")
     axA.set(xlabel=r"Whi5 concentration $c=W/V$", ylabel="SBF activity (Start commitment)",
             title="(a) Whi5 dilution drives a bistable switch", xlim=(0, 3.0), ylim=(-0.03, 1.05))
-    axA.legend(loc="lower right", frameon=False, fontsize=9)
+    axA.legend(loc="lower right", frameon=False, fontsize=11)
 
     # (b) emergent sizer law V* = W/theta
     grid = [0] + W
@@ -73,9 +73,9 @@ def main() -> None:
     axB.set(xlabel="Total Whi5 per cycle $W$", ylabel=r"Emergent set-point $V^\ast$ (fL)",
             title=r"(b) $V^\ast$ is exactly linear in $W$", xlim=(0, max(W) * 1.05),
             ylim=(0, max(Vmech) * 1.05))
-    axB.legend(loc="upper left", frameon=False, fontsize=9)
+    axB.legend(loc="upper left", frameon=False, fontsize=11)
     axB.text(0.97, 0.05, rf"$\theta=c^\ast={theta:.3f}$", transform=axB.transAxes,
-             ha="right", fontsize=9, color="0.35")
+             ha="right", fontsize=11, color="0.35")
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = HERE / "whi5_sbf_switch.png"

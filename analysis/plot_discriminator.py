@@ -36,7 +36,7 @@ def main():
             svb.append(float(row["sizer_Vb"]))
 
     apply_style()
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.8))
 
     # Soifer & Amir 2016 (Curr Biol 26:356) reference slope targets for the three regimes.
     # Drawn as faint reference lines through the data cloud's centroid so the model slope
@@ -60,13 +60,13 @@ def main():
              label="Soifer-Amir 2016 targets:\nsizer 0 / adder 1 / timer 2")
     axA.set(xlabel=r"Birth volume $V_b$", ylabel=r"Division volume $V_d$",
             title="(a) The size-control slope discriminator")
-    axA.legend(loc="upper left", frameon=False, fontsize=8.5)
+    axA.legend(loc="upper left", frameon=False, fontsize=10.5)
 
     axB.plot(gen, tvb, "-", lw=2.0, color=VERM, label="Sub-doubling timer (collapses)")
     axB.plot(gen, svb, "-", lw=2.0, color=BLUE, label="Inhibitor-dilution sizer (stable)")
     axB.set(xlabel="Generation", ylabel="Birth volume",
             title="(b) The sizer stabilizes what the timer collapses")
-    axB.legend(loc="center right", frameon=False, fontsize=9)
+    axB.legend(loc="center right", frameon=False, fontsize=11)
 
     fig.tight_layout()
     out = HERE / "discriminator.png"

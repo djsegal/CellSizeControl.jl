@@ -33,9 +33,9 @@ def main():
     gen = np.array(gen, float)
 
     apply_style()
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.8))
     fig.suptitle("The fitness face of replicative aging (same age-eroding asymmetry)",
-                 y=0.99, fontsize=12)
+                 y=0.99, fontsize=14)
 
     # Panel (a): inherited damage is illustrative (arbitrary units) -- there is no published
     # per-generation damage curve to target, so it is honestly labelled as such, no fake data.
@@ -70,11 +70,11 @@ def main():
         "G1-specific (Moreno 2019)",
         xy=(max(gen) * 0.78, cyc[int(len(cyc) * 0.78)]), xycoords="data",
         xytext=(0.50, 0.30), textcoords="axes fraction",
-        fontsize=7.4, color="0.30", ha="left", va="center",
+        fontsize=10, color="0.30", ha="left", va="center",
         arrowprops=dict(arrowstyle="->", color="0.45", lw=1.0,
                         connectionstyle="arc3,rad=-0.2"))
     axB.set_ylim(min(cyc) - 4, max(cyc) * 1.04)
-    axB.legend(loc="upper left", frameon=False, fontsize=8.0)
+    axB.legend(loc="upper left", frameon=False, fontsize=11)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = HERE / "fitness_face.png"

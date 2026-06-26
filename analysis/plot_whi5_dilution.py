@@ -40,9 +40,9 @@ def main():
     col = {"daughter": BLUE, "mother": GREEN}
 
     apply_style()
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.8))
     fig.suptitle("Inhibitor (Whi5) dilution sets Start at a critical size", y=0.99,
-                 fontsize=12)
+                 fontsize=14)
 
     # Each cell's sizer step is its Whi5-dilution time; the fixed 19-min CLN2 timer
     # follows Start, so the total two-step G1 is the sizer step + 19 min.
@@ -60,7 +60,7 @@ def main():
                 label=r"Start threshold $\theta=c^\ast\approx0.45$")
     axA.set(xlabel="Time in G1 (min)", ylabel=r"Inhibitor concentration $[W]=W/V$",
             title="(a) Whi5 dilutes to the Start threshold")
-    axA.legend(loc="upper right", frameon=False, fontsize=9)
+    axA.legend(loc="upper right", frameon=False, fontsize=11)
 
     # Spell out the two-step G1 for each cell: sizer step + 19-min CLN2 timer.
     d_step, m_step = t["daughter"][-1], t["mother"][-1]
@@ -68,13 +68,13 @@ def main():
         f"+ 19 min CLN2 timer\n→ ~{d_step + T_CLN2:.0f} min total G1",
         xy=(d_step, THRESH), xycoords="data",
         xytext=(0.50, 0.55), textcoords="axes fraction",
-        fontsize=8.5, color=col["daughter"], ha="left", va="center",
+        fontsize=10.5, color=col["daughter"], ha="left", va="center",
         arrowprops=dict(arrowstyle="->", color=col["daughter"], lw=1.0))
     axA.annotate(
         f"+ 19 min CLN2 timer\n→ ~{m_step + T_CLN2:.0f} min total G1 (timer only)",
         xy=(m_step, THRESH), xycoords="data",
         xytext=(0.07, 0.22), textcoords="axes fraction",
-        fontsize=8.5, color=col["mother"], ha="left", va="center",
+        fontsize=10.5, color=col["mother"], ha="left", va="center",
         arrowprops=dict(arrowstyle="->", color=col["mother"], lw=1.0))
 
     for c in ("daughter", "mother"):
@@ -83,7 +83,7 @@ def main():
     axB.axhline(VSTAR, color=VERM, lw=1.8, ls="--", label=r"Critical size $V^\ast = W/\theta$")
     axB.set(xlabel="Time in G1 (min)", ylabel="Cell volume (fL)",
             title="(b) Growth to the critical size $V^\\ast$")
-    axB.legend(loc="lower right", frameon=False, fontsize=9)
+    axB.legend(loc="lower right", frameon=False, fontsize=11)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = HERE / "whi5_dilution.png"

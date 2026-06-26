@@ -39,19 +39,19 @@ def load_grid(fname, zkey):
 
 def main() -> None:
     apply_style()
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11.4, 4.5))
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12.4, 4.9))
     fig.suptitle("Size-control phase diagram: homeostasis and discriminator reliability",
-                 y=0.99, fontsize=12)
+                 y=0.99, fontsize=14)
 
     # (a) phase field over (alpha, f): logratio = homeostatic (~0) vs runaway (large +)
     A, F, LR = load_grid("phase_alpha_f.csv", "logratio")
     _, _, SL = load_grid("phase_alpha_f.csv", "slope")
     pcm = axA.pcolormesh(A, F, LR, cmap="RdBu_r", vmin=-1.5, vmax=1.5, shading="auto")
     cb = fig.colorbar(pcm, ax=axA, pad=0.02)
-    cb.set_label(r"$\log_{10}(V_{\rm end}/V_0)$  (runaway $\to$)", fontsize=9)
+    cb.set_label(r"$\log_{10}(V_{\rm end}/V_0)$  (runaway $\to$)", fontsize=11)
     # sizer/adder/timer bin edges as slope contours
     cs = axA.contour(A, F, SL, levels=[0.5, 1.5], colors="k", linewidths=1.0, linestyles="-")
-    axA.clabel(cs, fmt={0.5: "sizer | adder", 1.5: "adder | timer"}, fontsize=8)
+    axA.clabel(cs, fmt={0.5: "sizer | adder", 1.5: "adder | timer"}, fontsize=10)
     # analytic homeostasis boundary alpha*f = 1  ->  f = 1/alpha
     aa = np.linspace(1 / F.max(), A.max(), 200)
     axA.plot(aa, 1 / aa, "--", color=VERM, lw=2.0, label=r"Homeostasis bound $\alpha f=1$")
@@ -59,21 +59,21 @@ def main() -> None:
             ylabel=r"Division asymmetry $f$ (daughter fraction)",
             title="(a) Homeostatic vs runaway lineages", xlim=(A.min(), A.max()),
             ylim=(F.min(), F.max()))
-    axA.legend(loc="lower left", frameon=True, framealpha=0.9, fontsize=8)
+    axA.legend(loc="lower left", frameon=True, framealpha=0.9, fontsize=10.5)
 
     # (b) misclassification over (alpha, cv)
     A2, CV, MC = load_grid("phase_misclass.csv", "misclass")
     pcm2 = axB.pcolormesh(A2, CV, MC, cmap="magma", vmin=0, vmax=1, shading="auto")
     cb2 = fig.colorbar(pcm2, ax=axB, pad=0.02)
-    cb2.set_label("P(misclassified)", fontsize=9)
+    cb2.set_label("P(misclassified)", fontsize=11)
     for edge in (0.35, 0.65, 1.35, 1.65):
         axB.axvline(edge, color="w", lw=0.6, ls=":", alpha=0.5)
     axB.set(xlabel=r"Control strength $\alpha$",
             ylabel=r"Measurement noise $cv$",
             title="(b) Where the discriminator becomes unreliable", xlim=(A2.min(), A2.max()),
             ylim=(CV.min(), CV.max()))
-    axB.text(0.04, 0.285, "n=80 cells, 300 replicates", fontsize=8, color="w")
-    axB.text(0.04, 0.265, "hard: strong sizers + bin edges", fontsize=8, color="w")
+    axB.text(0.04, 0.275, "n=80 cells, 300 replicates", fontsize=10, color="w")
+    axB.text(0.04, 0.245, "hard: strong sizers + bin edges", fontsize=10, color="w")
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = HERE / "phase_diagram.png"

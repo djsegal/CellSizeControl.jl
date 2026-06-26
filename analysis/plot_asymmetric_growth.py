@@ -81,14 +81,14 @@ def panel_timecourse(ax):
     ax.plot(t, vt, color=VERM, lw=1.0, label="Mother + bud")
     ax.set_xlabel("Time (min)")
     ax.set_ylabel("Volume (fL)")
-    ax.set_title("(a) Lineage growth over the replicative lifespan", fontsize=11)
+    ax.set_title("(a) Lineage growth over the replicative lifespan")
     ax.set_xlim(0, t.max())
     ax.set_ylim(0, vt.max() * 1.14)
-    ax.legend(loc="upper left", frameon=False, fontsize=9, handlelength=1.4)
+    ax.legend(loc="upper left", frameon=False, fontsize=11, handlelength=1.4)
     # the monotonic-mother invariant, stated where it reads
     ax.annotate("Mother body never shrinks\n(only the bud detaches)",
                 xy=(t.max() * 0.34, vm[int(len(vm) * 0.34)] * 0.55),
-                fontsize=8.0, color=BLUE, ha="center", va="center")
+                fontsize=11, color=BLUE, ha="center", va="center")
 
 
 def panel_maternal(ax):
@@ -120,10 +120,10 @@ def panel_maternal(ax):
     a, b, c = pm
     ax.text(0.045, 0.96,
             f"Mother: $V_m = {a:.0f} - {abs(b):.0f}\\,e^{{{c:.2g}\\,g}}$",
-            transform=ax.transAxes, color=BLUE, fontsize=8.5, va="top", ha="left")
+            transform=ax.transAxes, color=BLUE, fontsize=11, va="top", ha="left")
     ax.text(0.955, 0.07,
             "Daughter: $V_d = r(g)\\,V_m,\\ r{:}\\,0.7{\\to}0.9$",
-            transform=ax.transAxes, color=VERM, fontsize=8.5, va="bottom", ha="right")
+            transform=ax.transAxes, color=VERM, fontsize=11, va="bottom", ha="right")
     # Published reference for the DIRECTION + magnitude of the trend: daughters of older
     # mothers are born larger (Johnston 1966, Antonie van Leeuwenhoek 32:94 -- directional).
     # Yang et al. 2011 (Cell Cycle 10:144, Table 1 / Fig 2A) quantify it: virgin daughters
@@ -137,16 +137,16 @@ def panel_maternal(ax):
         "Yang 2011, ~6.9 → 11 µm, ~4× vol)",
         xy=(g_late * 0.86, d_late * 0.965), xycoords="data",
         xytext=(g_late * 0.40, (d_early + d_late) * 0.5), textcoords="data",
-        fontsize=7.6, color="0.30", ha="left", va="center",
+        fontsize=10, color="0.30", ha="left", va="center",
         arrowprops=dict(arrowstyle="->", color="0.45", lw=1.0,
                         connectionstyle="arc3,rad=-0.15"))
     ax.set_xlabel("Maternal replicative age (generations)")
     ax.set_ylabel("Volume (fL)")
-    ax.set_title("(b) Maternal-age asymmetry, to the replicative lifespan", fontsize=11)
+    ax.set_title("(b) Maternal-age asymmetry, to the replicative lifespan")
     ax.yaxis.set_major_locator(MultipleLocator(5))
     ax.grid(axis="y", which="major", color="0.9", lw=0.7)
     ax.set_axisbelow(True)
-    leg = ax.legend(loc="lower right", frameon=True, fontsize=8.5, handletextpad=0.4,
+    leg = ax.legend(loc="lower right", frameon=True, fontsize=10.5, handletextpad=0.4,
                     bbox_to_anchor=(1.0, 0.16))
     leg.get_frame().set_facecolor("white")
     leg.get_frame().set_edgecolor("0.15")
@@ -157,7 +157,7 @@ def panel_maternal(ax):
 
 def main():
     apply_style()
-    fig, (axL, axR) = plt.subplots(1, 2, figsize=(11.0, 4.4))
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(12.0, 4.8))
     panel_timecourse(axL)
     r2m, r2d = panel_maternal(axR)
     fig.tight_layout(w_pad=2.0)

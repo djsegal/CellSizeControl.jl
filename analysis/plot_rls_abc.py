@@ -37,15 +37,15 @@ def main() -> None:
     pp = np.array([int(r["rls"]) for r in csv.DictReader(open(HERE / "rls_abc_predictive.csv"))])
 
     apply_style()
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.8))
     fig.suptitle("Calibrating the emergent replicative lifespan to McCormick 2015 (ABC)",
-                 y=0.99, fontsize=12)
+                 y=0.99, fontsize=14)
 
     # (a) joint posterior (D_crit, kappa): the identifiability ridge
     hb = clean_hexbin(axA, D, k, gridsize=24, cmap="Blues", mincnt=1)
     fig.colorbar(hb, ax=axA, pad=0.02, label="posterior density")
     axA.text(0.04, 0.93, rf"ridge corr $\rho={rho:.2f}$", transform=axA.transAxes,
-             fontsize=10, color=VERM, fontweight="bold")
+             fontsize=11, color=VERM, fontweight="bold")
     axA.set(xlabel=r"Viability threshold $D_{\rm crit}$",
             ylabel=r"Autocatalysis $\kappa$",
             title="(a) Joint posterior: a trade-off ridge")
@@ -61,7 +61,7 @@ def main() -> None:
     axB.axvline(MEAN_T, color=VERM, lw=1.4, ls=":")
     axB.set(xlabel="Replicative lifespan (divisions)", ylabel="Probability density",
             title="(b) Posterior-predictive matches the data", xlim=(0, 60))
-    axB.legend(loc="upper right", frameon=False, fontsize=8.5)
+    axB.legend(loc="upper right", frameon=False, fontsize=11)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = HERE / "rls_abc.png"

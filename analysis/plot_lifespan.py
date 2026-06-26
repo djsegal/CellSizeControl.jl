@@ -40,9 +40,9 @@ def main():
             thr[c] = float(row["threshold"])
 
     apply_style()
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11, 4.4))
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.8))
     fig.suptitle("The replicative lifespan emerges from autocatalytic damage", y=0.99,
-                 fontsize=12)
+                 fontsize=14)
 
     # (a) RLS distribution. Published reference target: McCormick et al. 2015 (Cell Metab
     # 22:895) wild-type RLS, mean 26.6 with SD 9.7 (CV 0.365). These are not the main-text
@@ -60,7 +60,7 @@ def main():
                 label=f"Model mean {m:.1f} (CV {sd / m:.2f})")
     axA.set(xlabel="Replicative lifespan (divisions)", ylabel="Cells",
             title="(a) Emergent RLS distribution vs published target")
-    axA.legend(loc="upper right", frameon=False, fontsize=8.5)
+    axA.legend(loc="upper right", frameon=False, fontsize=10.5)
     axA.set_xlim(0, np.percentile(rls, 99.5) + 3)
 
     # (b) damage trajectories accelerating to each cell's threshold
@@ -73,7 +73,7 @@ def main():
     axB.plot([], [], "o", color=VERM, label="Senescence (threshold crossed)")
     axB.set(xlabel="Replicative age (divisions)", ylabel="Mother accumulated damage (a.u.)",
             title="(b) Autocatalytic damage reaches the viability threshold")
-    axB.legend(loc="upper left", frameon=False, fontsize=9)
+    axB.legend(loc="upper left", frameon=False, fontsize=11)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = HERE / "emergent_lifespan.png"

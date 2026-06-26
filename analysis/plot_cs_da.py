@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""CS-DA figure: the maternal-age phenomenology from rigorous_cell_size.jl (the
-literature-faithful cell-size-control model). From cs_da_lineage.csv:
-  (a) daughter birth size RISES with maternal generation while the mother enlarges
-      (asymmetry erosion; Kennedy 1994: old mothers -> larger daughters);
-  (b) the cell cycle slows with replicative age (aged mothers divide progressively
-      more slowly).
-Run via rr_env. Writes cs_da_maternal_age.png."""
+"""Maternal-age phenomenology from the energetic cell-size model (rigorous_cell_size.jl ->
+cs_da_lineage.csv), to the budding-yeast replicative lifespan:
+
+  (a) the mother enlarges with replicative age and the daughters she produces grow with her
+      age (Kennedy 1994), each fit by its mechanistic form;
+  (b) the cell cycle slows with replicative age (accumulated damage lengthens the cycle).
+
+Okabe-Ito palette (colorblind-safe): mother = blue, daughter = vermillion, cycle = green.
+Run via a venv with matplotlib + scipy.
+"""
 from __future__ import annotations
 
 import csv
@@ -15,87 +18,65 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.ticker import MultipleLocator
+from scipy.optimize import curve_fit
 
 HERE = Path(__file__).resolve().parent
+MOTHER, DAUGHTER, CYCLE = "#0072b2", "#d55e00", "#009e73"  # Okabe-Ito
 
 
-def sat_fit(x, y):
-    """Fit the saturating exponential V(a) = A + B·(1 − e^(−a/τ)) — the model's form for
-    the maternal enlargement V*(a), the asymmetry erosion β(a), and the age-slowed cycle.
-    Returns a dense (xs, ys) trend line plus the asymptote A+B and time constant τ."""
-    import numpy as np
-    from scipy.optimize import curve_fit
-
-    def f(a, A, B, tau):
-        return A + B * (1.0 - np.exp(-a / tau))
-
-    x = np.asarray(x, float)
+def _r2(y, yhat):
     y = np.asarray(y, float)
-    p0 = [y[0], y[-1] - y[0], max(1.0, (x[-1] - x[0]) / 3.0)]
-    try:
-        popt, _ = curve_fit(f, x, y, p0=p0, maxfev=20000,
-                            bounds=([-np.inf, -np.inf, 1e-3], [np.inf, np.inf, np.inf]))
-    except Exception:
-        popt = p0
-    resid = y - f(x, *popt)
-    ss_tot = np.sum((y - y.mean()) ** 2)
-    r2 = 1.0 - np.sum(resid**2) / ss_tot if ss_tot > 0 else float("nan")
-    xs = np.linspace(x.min(), x.max(), 200)
-    return xs, f(xs, *popt), tuple(popt), r2
+    return 1.0 - np.sum((y - yhat) ** 2) / np.sum((y - y.mean()) ** 2)
 
 
-def _fit_caption(label, popt, r2):
-    A, B, tau = popt
-    return (f"{label}: $V\\!=\\!{A:.1f}\\!+\\!{B:.1f}(1\\!-\\!e^{{-a/{tau:.1f}}})$"
-            f"  $R^2\\!=\\!{r2:.3f}$")
+def single_exp(x, y):
+    f = lambda g, a, b, c: a + b * np.exp(c * g)
+    p, _ = curve_fit(f, x, y, p0=[y[-1], y[0] - y[-1], -0.1], maxfev=40000)
+    xs = np.linspace(x.min(), x.max(), 300)
+    return xs, f(xs, *p), p, _r2(y, f(x, *p))
 
 
 def main():
     gen, dau, mom, cyc = [], [], [], []
     with open(HERE / "cs_da_lineage.csv") as f:
-        r = csv.DictReader(f)
-        for row in r:
+        for row in csv.DictReader(f):
             gen.append(int(row["gen"]))
             dau.append(float(row["Vdaughter"]))
             mom.append(float(row["Vmother"]))
             cyc.append(float(row["cycle"]))
+    gen = np.array(gen, float)
 
-    plt.rcParams.update({"font.size": 10, "figure.dpi": 130,
+    plt.rcParams.update({"font.size": 10, "figure.dpi": 150, "savefig.dpi": 150,
                          "axes.spines.top": False, "axes.spines.right": False})
-    fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.6))
-    fig.suptitle("Maternal-age phenomenology from the energetic cell-size model "
-                 "(Whi5 sizer + Di Talia G1 + asymmetry erosion)", y=0.99, fontsize=12)
+    fig, (axA, axB) = plt.subplots(1, 2, figsize=(11.5, 4.6))
+    fig.suptitle("Maternal-Age Phenomenology Across the Replicative Lifespan "
+                 "(Energetic Cell-Size Model)", y=0.99, fontsize=12.5)
 
-    # saturating-exponential trend fits V(a)=A+B(1−e^(−a/τ)) (the model's form)
-    xm, ym, pm, r2m = sat_fit(gen, mom)
-    xd, yd, pd, r2d = sat_fit(gen, dau)
-    axA.plot(gen, mom, "s", color="#3b3bbf", ms=5, label="mother size at Start")
-    axA.plot(gen, dau, "o", color="#e08a1e", ms=5, label="daughter birth size")
-    axA.plot(xm, ym, "-", color="#3b3bbf", lw=1.3, zorder=1)
-    axA.plot(xd, yd, "-", color="#e08a1e", lw=1.3, zorder=1)
-    axA.text(0.97, 0.03,
-             _fit_caption("mother", pm, r2m) + "\n" + _fit_caption("daughter", pd, r2d),
-             transform=axA.transAxes, va="bottom", ha="right", fontsize=7.5,
-             bbox=dict(boxstyle="round", fc="white", ec="0.7", alpha=0.9))
-    axA.set(xlabel="maternal replicative age (generation)", ylabel="volume (fL)",
-            title="(a) mother enlarges; daughters grow with maternal age")
-    axA.legend(loc="upper left", frameon=False, fontsize=9)
-    axA.annotate("1st daughter\nsmall, pristine", xy=(gen[0], dau[0]),
-                 xytext=(4.5, dau[0] + 4.5), fontsize=8, color="#b06010",
-                 arrowprops=dict(arrowstyle="->", color="#b06010", lw=0.8))
-    axA.annotate("late daughters\nlarge (asymmetry lost)", xy=(gen[-1], dau[-1]),
-                 xytext=(gen[-1] - 10.5, dau[-1] - 11), fontsize=8, color="#b06010",
-                 ha="center", arrowprops=dict(arrowstyle="->", color="#b06010", lw=0.8))
+    # (a) size: mother + daughter, curves only (fit-by-mechanism), Okabe-Ito
+    xm, ym, _, _ = single_exp(gen, mom)
+    xd, yd, _, _ = single_exp(gen, dau)
+    axA.plot(xm, ym, "-", color=MOTHER, lw=2.0, solid_capstyle="round")
+    axA.plot(xd, yd, "-", color=DAUGHTER, lw=2.0, solid_capstyle="round")
+    axA.text(0.045, 0.95, "Mother Size at Start", transform=axA.transAxes,
+             color=MOTHER, fontsize=9, va="top", ha="left")
+    axA.text(0.97, 0.06, "Daughter Birth", transform=axA.transAxes,
+             color=DAUGHTER, fontsize=9, va="bottom", ha="right")
+    axA.set(xlabel="Maternal Replicative Age (Generation)", ylabel="Volume (fL)",
+            title="(a) The Mother Enlarges; Daughters Grow With Her Age")
+    axA.set_xlim(0, max(gen) + 1)
+    axA.yaxis.set_major_locator(MultipleLocator(5))
+    axA.grid(axis="y", which="major", color="0.9", lw=0.7)
+    axA.set_axisbelow(True)
 
-    xc, yc, pc, r2c = sat_fit(gen, cyc)
-    axB.plot(gen, cyc, "^", color="#c44e52", ms=5, label="cycle time")
-    axB.plot(xc, yc, "-", color="#c44e52", lw=1.3, zorder=1)
-    axB.text(0.97, 0.03, _fit_caption("cycle", pc, r2c), transform=axB.transAxes,
-             va="bottom", ha="right", fontsize=7.5,
-             bbox=dict(boxstyle="round", fc="white", ec="0.7", alpha=0.9))
-    axB.legend(loc="upper left", frameon=False, fontsize=9)
-    axB.set(xlabel="maternal replicative age (generation)", ylabel="cycle time (min)",
-            title="(b) the cell cycle slows with replicative age")
+    # (b) cycle time slows with replicative age (accumulated damage lengthens it)
+    axB.plot(gen, cyc, "-", color=CYCLE, lw=2.0, solid_capstyle="round")
+    axB.set(xlabel="Maternal Replicative Age (Generation)", ylabel="Cycle Time (min)",
+            title="(b) The Cell Cycle Slows With Replicative Age")
+    axB.set_xlim(0, max(gen) + 1)
+    axB.grid(axis="y", which="major", color="0.9", lw=0.7)
+    axB.set_axisbelow(True)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     out = HERE / "cs_da_maternal_age.png"

@@ -2,6 +2,7 @@ using CellSizeControl
 using Test
 using Aqua
 using ExplicitImports
+using JET
 
 @testset "CellSizeControl" begin
     # ---- Q: package-quality gates (release-readiness) ----
@@ -9,6 +10,17 @@ using ExplicitImports
         Aqua.test_all(CellSizeControl; ambiguities=false)
         @test check_no_implicit_imports(CellSizeControl) === nothing
         @test check_all_explicit_imports_via_owners(CellSizeControl) === nothing
+    end
+
+    # ---- Q: JET static analysis (no inference errors / undefined-var / no-method) ----
+    # The `rate` callback is an untyped keyword (`rate=qss_growth_rate`), so grow_to/
+    # grow_for/cell_cycle/lineage_timecourse dispatch on it dynamically. That is a known,
+    # accepted runtime-dispatch cost (a deliberate extension point, not a bug) and is NOT
+    # an error JET's default analyzer reports; if a future JET flags it, scope it out with
+    # target_modules rather than monomorphizing the API. This gate catches real inference
+    # errors (typos, undefined vars, guaranteed no-method) only.
+    @testset "Q — JET package analysis" begin
+        JET.test_package(CellSizeControl; target_defined_modules=true)
     end
 
     # ---- L1: analytic limits — the slope discriminator recovers each regime ----

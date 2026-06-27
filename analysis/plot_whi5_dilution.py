@@ -16,7 +16,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+from _pubstyle import (apply_style, pub_arrow, halo, opaque_legend, pub_audit,
+                       BLUE, VERM, GREEN)
 
 HERE = Path(__file__).resolve().parent
 # Okabe-Ito: daughter / threshold / mother. The Start threshold here is the SAME calibrated
@@ -60,22 +61,35 @@ def main():
                 label=r"Start threshold $\theta=c^\ast\approx0.45$")
     axA.set(xlabel="Time in G1 (min)", ylabel=r"Inhibitor concentration $[W]=W/V$",
             title="(a) Whi5 dilutes to the Start threshold")
-    axA.legend(loc="upper right", frameon=False, fontsize=11)
+    # headroom below the threshold so the annotations sit in the clear band under the curve
+    cmin = min(min(C[c]) for c in ("daughter", "mother"))
+    cmax = max(max(C[c]) for c in ("daughter", "mother"))
+    axA.set_ylim(cmin - 0.06, cmax + 0.02)
+    opaque_legend(axA, loc="upper right", fontsize=11)
 
-    # Spell out the two-step G1 for each cell: sizer step + 19-min CLN2 timer.
+    # Spell out the two-step G1 for each cell: sizer step + 19-min CLN2 timer. Each arrow is a
+    # thick filled triangle (pub_arrow) and TARGETS ITS OWN COLOURED MARKER (the cell's Start
+    # firing point), NOT the red threshold line. shrinkB keeps the triangle head off the marker
+    # so it isn't buried under it.
     d_step, m_step = t["daughter"][-1], t["mother"][-1]
-    axA.annotate(
-        f"+ 19 min CLN2 timer\n→ ~{d_step + T_CLN2:.0f} min total G1",
-        xy=(d_step, THRESH), xycoords="data",
-        xytext=(0.50, 0.55), textcoords="axes fraction",
-        fontsize=10.5, color=col["daughter"], ha="left", va="center",
-        arrowprops=dict(arrowstyle="->", color=col["daughter"], lw=1.0))
-    axA.annotate(
-        f"+ 19 min CLN2 timer\n→ ~{m_step + T_CLN2:.0f} min total G1 (timer only)",
-        xy=(m_step, THRESH), xycoords="data",
-        xytext=(0.07, 0.22), textcoords="axes fraction",
-        fontsize=10.5, color=col["mother"], ha="left", va="center",
-        arrowprops=dict(arrowstyle="->", color=col["mother"], lw=1.0))
+    d_conc, m_conc = C["daughter"][-1], C["mother"][-1]
+    ylo = cmin - 0.06
+    # daughter: text in the clear band BELOW the threshold, arrow up to the daughter's marker
+    halo(pub_arrow(
+        axA, xy=(d_step, d_conc),  # the daughter's own Start marker (not the red line)
+        xytext=(d_step * 0.62, ylo + 0.018),
+        text=f"+ 19 min CLN2 timer\n~{d_step + T_CLN2:.0f} min total G1",
+        color=col["daughter"], lw=2.0, scale=15, shrinkB=10,
+        connectionstyle="arc3,rad=-0.2",
+        fontsize=10.5, ha="center", va="bottom"))
+    # mother: born past V*, fires at once -- arrow up to its marker at t=0
+    halo(pub_arrow(
+        axA, xy=(m_step, m_conc),
+        xytext=(d_step * 0.22, ylo + 0.018),
+        text=f"+ 19 min CLN2 timer\n~{m_step + T_CLN2:.0f} min G1 (timer only)",
+        color=col["mother"], lw=2.0, scale=15, shrinkB=10,
+        connectionstyle="arc3,rad=0.25",
+        fontsize=10.5, ha="center", va="bottom"))
 
     for c in ("daughter", "mother"):
         axB.plot(t[c], V[c], "-", lw=2.4, color=col[c])
@@ -83,12 +97,14 @@ def main():
     axB.axhline(VSTAR, color=VERM, lw=1.8, ls="--", label=r"Critical size $V^\ast = W/\theta$")
     axB.set(xlabel="Time in G1 (min)", ylabel="Cell volume (fL)",
             title="(b) Growth to the critical size $V^\\ast$")
-    axB.legend(loc="lower right", frameon=False, fontsize=11)
+    opaque_legend(axB, loc="lower right", fontsize=11)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
+    issues = pub_audit(fig)
+    assert not issues, "whi5_dilution pub_audit: " + "; ".join(issues)
     out = HERE / "whi5_dilution.png"
     fig.savefig(out, bbox_inches="tight")
-    print("wrote", out)
+    print("wrote", out, "| audit clean")
 
 
 if __name__ == "__main__":

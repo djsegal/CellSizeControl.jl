@@ -17,7 +17,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+from matplotlib.colors import TwoSlopeNorm
+
+from _pubstyle import (apply_style, opaque_legend, halo, pub_audit,
+                       SEQ_CMAP, DIV_CMAP, BLUE, VERM, GREEN)
 
 HERE = Path(__file__).resolve().parent
 
@@ -46,39 +49,50 @@ def main() -> None:
     # (a) phase field over (alpha, f): logratio = homeostatic (~0) vs runaway (large +)
     A, F, LR = load_grid("phase_alpha_f.csv", "logratio")
     _, _, SL = load_grid("phase_alpha_f.csv", "slope")
-    pcm = axA.pcolormesh(A, F, LR, cmap="RdBu_r", vmin=-1.5, vmax=1.5, shading="auto")
+    # signed log-ratio (homeostatic ~0 vs runaway large +): a DIVERGING quantity, so use the
+    # CB-safe diverging colormap (vik) centred at 0 via TwoSlopeNorm. No RdBu.
+    lim = float(np.nanmax(np.abs(LR)))
+    norm = TwoSlopeNorm(vcenter=0.0, vmin=-lim, vmax=lim)
+    pcm = axA.pcolormesh(A, F, LR, cmap=DIV_CMAP, norm=norm, shading="auto")
     cb = fig.colorbar(pcm, ax=axA, pad=0.02)
     cb.set_label(r"$\log_{10}(V_{\rm end}/V_0)$  (runaway $\to$)", fontsize=11)
-    # sizer/adder/timer bin edges as slope contours
-    cs = axA.contour(A, F, SL, levels=[0.5, 1.5], colors="k", linewidths=1.0, linestyles="-")
-    axA.clabel(cs, fmt={0.5: "sizer | adder", 1.5: "adder | timer"}, fontsize=10)
+    # sizer/adder/timer bin edges as slope contours; labels haloed so the field can't cut them
+    cs = axA.contour(A, F, SL, levels=[0.5, 1.5], colors="k", linewidths=1.1, linestyles="-")
+    lbls = axA.clabel(cs, fmt={0.5: "sizer | adder", 1.5: "adder | timer"}, fontsize=10)
+    halo(lbls)
     # analytic homeostasis boundary alpha*f = 1  ->  f = 1/alpha
     aa = np.linspace(1 / F.max(), A.max(), 200)
-    axA.plot(aa, 1 / aa, "--", color=VERM, lw=2.0, label=r"Homeostasis bound $\alpha f=1$")
+    axA.plot(aa, 1 / aa, "--", color=VERM, lw=2.2, label=r"Homeostasis bound $\alpha f=1$")
     axA.set(xlabel=r"Control strength $\alpha$ (sizer 0 / adder 1 / timer 2)",
             ylabel=r"Division asymmetry $f$ (daughter fraction)",
             title="(a) Homeostatic vs runaway lineages", xlim=(A.min(), A.max()),
             ylim=(F.min(), F.max()))
-    axA.legend(loc="lower left", frameon=True, framealpha=0.9, fontsize=10.5)
+    opaque_legend(axA, loc="lower left", fontsize=10.5)
 
     # (b) misclassification over (alpha, cv)
     A2, CV, MC = load_grid("phase_misclass.csv", "misclass")
-    pcm2 = axB.pcolormesh(A2, CV, MC, cmap="magma", vmin=0, vmax=1, shading="auto")
+    # misclassification probability is a SEQUENTIAL quantity (0..1): use viridis. No magma.
+    pcm2 = axB.pcolormesh(A2, CV, MC, cmap=SEQ_CMAP, vmin=0, vmax=1, shading="auto")
     cb2 = fig.colorbar(pcm2, ax=axB, pad=0.02)
     cb2.set_label("P(misclassified)", fontsize=11)
     for edge in (0.35, 0.65, 1.35, 1.65):
-        axB.axvline(edge, color="w", lw=0.6, ls=":", alpha=0.5)
+        axB.axvline(edge, color="w", lw=0.8, ls=":", alpha=0.6)
     axB.set(xlabel=r"Control strength $\alpha$",
             ylabel=r"Measurement noise $cv$",
             title="(b) Where the discriminator becomes unreliable", xlim=(A2.min(), A2.max()),
             ylim=(CV.min(), CV.max()))
-    axB.text(0.04, 0.275, "n=80 cells, 300 replicates", fontsize=10, color="w")
-    axB.text(0.04, 0.245, "hard: strong sizers + bin edges", fontsize=10, color="w")
+    # white text on the dark (low-misclass) viridis region, haloed dark so it survives lighter cells
+    halo(axB.text(0.04, 0.285, "n=80 cells, 300 replicates", transform=axB.transAxes,
+                  fontsize=10, color="w", va="top"), fg="0.12")
+    halo(axB.text(0.04, 0.215, "hard: strong sizers + bin edges", transform=axB.transAxes,
+                  fontsize=10, color="w", va="top"), fg="0.12")
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
+    issues = pub_audit(fig)
+    assert not issues, "phase_diagram pub_audit: " + "; ".join(issues)
     out = HERE / "phase_diagram.png"
     fig.savefig(out, bbox_inches="tight")
-    print("wrote", out)
+    print("wrote", out, "| audit clean")
 
 
 if __name__ == "__main__":

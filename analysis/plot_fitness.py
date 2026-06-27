@@ -17,7 +17,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE, REDPURPLE
+from _pubstyle import (apply_style, pub_arrow, halo, opaque_legend, pub_audit,
+                       BLUE, VERM, GREEN, REDPURPLE)
 
 HERE = Path(__file__).resolve().parent
 DAMAGE, CYCLE = REDPURPLE, GREEN  # Okabe-Ito reddish-purple + bluish-green
@@ -52,34 +53,37 @@ def main():
     #   Egilmez & Jazwinski 1989 (J Bacteriol 171:37): generation time rises ~5-6x by end of life;
     #   Fehrmann/Charvin 2013 (Cell Rep 5:1589): 78.3 min in young cells, then abrupt senescence entry;
     #   Moreno et al. 2019 (eLife 8:e48240): the lengthening is G1-specific (Whi5 ~3x in final cycles).
+    cyc_arr = np.asarray(cyc, float)
+    fold = cyc_arr.max() / cyc_arr.min()  # model end-of-life slowing fold (now ~5.2x)
     axB.plot(gen, cyc, "-", lw=2.0, color=CYCLE, solid_capstyle="round",
-             label="Model cycle time (illustrative)")
+             label=f"Model cycle time ({fold:.1f}x over life)")
     # mark the published young-cell anchor (Fehrmann/Charvin 2013, 78.3 min) as a reference line
     axB.axhline(78.3, color="0.45", lw=1.2, ls="--",
                 label="Fehrmann/Charvin 2013: 78.3 min (young)")
     axB.set(xlabel="Maternal replicative age (generations)", ylabel="Cycle time (min)",
             title="(b) The cell cycle slows with replicative age")
     axB.set_xlim(0, max(gen) + 1)
+    axB.set_ylim(min(cyc) - 8, max(cyc) * 1.06)
     axB.grid(axis="y", which="major", color="0.9", lw=0.7)
     axB.set_axisbelow(True)
-    # annotate the published direction/magnitude as a reference trend, placed in the open
-    # lower-right whitespace so it clears both the model curve and the 78.3-min reference line
-    axB.annotate(
-        "Cycle lengthens with age (published trend):\n"
-        "~5–6× by end of life (Egilmez & Jazwinski 1989);\n"
-        "G1-specific (Moreno 2019)",
-        xy=(max(gen) * 0.78, cyc[int(len(cyc) * 0.78)]), xycoords="data",
-        xytext=(0.50, 0.30), textcoords="axes fraction",
-        fontsize=10, color="0.30", ha="left", va="center",
-        arrowprops=dict(arrowstyle="->", color="0.45", lw=1.0,
-                        connectionstyle="arc3,rad=-0.2"))
-    axB.set_ylim(min(cyc) - 4, max(cyc) * 1.04)
-    axB.legend(loc="upper left", frameon=False, fontsize=11)
+    # the published direction/magnitude as a reference trend, with the model's OWN matching
+    # fold; a thick filled-triangle arrow (pub_arrow) up to the late model cycle marker.
+    halo(pub_arrow(
+        axB, xy=(max(gen) * 0.80, cyc[int(len(cyc) * 0.80)]),
+        xytext=(max(gen) * 0.10, max(cyc) * 0.80),
+        text=("Cycle lengthens with age (Egilmez &\n"
+              f"Jazwinski 1989, ~5-6x; G1-specific,\nMoreno 2019). Model: {fold:.1f}x"),
+        color="0.30", lw=1.8, scale=15, shrinkB=8,
+        connectionstyle="arc3,rad=0.18",
+        fontsize=10, ha="left", va="center"))
+    opaque_legend(axB, loc="upper left", fontsize=11)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
+    issues = pub_audit(fig)
+    assert not issues, "fitness_face pub_audit: " + "; ".join(issues)
     out = HERE / "fitness_face.png"
     fig.savefig(out, bbox_inches="tight")
-    print("wrote", out)
+    print("wrote", out, f"| cycle {cyc_arr.min():.0f}->{cyc_arr.max():.0f} min ({fold:.2f}x) | audit clean")
 
 
 if __name__ == "__main__":

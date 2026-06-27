@@ -2,7 +2,8 @@
 """Size-control discriminator figure (from the package, via gen_discriminator.jl):
   (a) the Soifer-Amir Vd-vs-Vb slope recovers timer (~2), adder (~1), sizer (~0);
   (b) a sub-doubling timer collapses a lineage while the inhibitor-dilution sizer holds it.
-Okabe-Ito palette. Run via a venv with matplotlib + numpy.
+Okabe-Ito palette, redundant colour+marker encoding, opaque big-marker legends.
+Run via a venv with matplotlib + numpy.
 """
 from __future__ import annotations
 
@@ -16,10 +17,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+from _pubstyle import (apply_style, opaque_legend, halo, pub_audit,
+                       BLUE, VERM, GREEN)
 
 HERE = Path(__file__).resolve().parent
-COL = {"timer": BLUE, "adder": VERM, "sizer": GREEN}  # Okabe-Ito
+# Okabe-Ito, paired with a glyph so each regime reads in grayscale / for CVD.
+COL = {"timer": BLUE, "adder": VERM, "sizer": GREEN}
+MRK = {"timer": "^", "adder": "s", "sizer": "o"}
 
 
 def main():
@@ -39,39 +43,48 @@ def main():
     fig, (axA, axB) = plt.subplots(1, 2, figsize=(12, 4.8))
 
     # Soifer & Amir 2016 (Curr Biol 26:356) reference slope targets for the three regimes.
-    # Drawn as faint reference lines through the data cloud's centroid so the model slope
-    # can be read against the published target (sizer 0 / adder 1 / timer 2).
+    # Drawn as a reference line through the data cloud's centroid so the model slope can be
+    # read against the published target (sizer 0 / adder 1 / timer 2).
     SOIFER = {"sizer": 0.0, "adder": 1.0, "timer": 2.0}
     for rule in ("timer", "adder", "sizer"):
         vb, vd = by_rule[rule]
         vb = np.asarray(vb, float)
         vd = np.asarray(vd, float)
         s = np.polyfit(vb, vd, 1)[0]
-        axA.scatter(vb, vd, s=6, color=COL[rule], alpha=0.5,
-                    label=f"{rule} (model slope {s:.2f})")
+        axA.scatter(vb, vd, s=20, color=COL[rule], marker=MRK[rule], alpha=0.45,
+                    edgecolors="none", zorder=2,
+                    label=f"{rule}  (model slope {s:.2f}, target {SOIFER[rule]:.0f})")
         # reference target line: slope = Soifer-Amir value, anchored at the cloud centroid
         ref = SOIFER[rule]
         xc, yc = vb.mean(), vd.mean()
         xr = np.array([vb.min(), vb.max()])
-        axA.plot(xr, yc + ref * (xr - xc), ls=(0, (4, 3)), lw=1.3, color=COL[rule],
-                 alpha=0.9, zorder=2)
-    # one legend entry naming the reference, color-neutral
-    axA.plot([], [], ls=(0, (4, 3)), lw=1.3, color="0.35",
-             label="Soifer-Amir 2016 targets:\nsizer 0 / adder 1 / timer 2")
-    axA.set(xlabel=r"Birth volume $V_b$", ylabel=r"Division volume $V_d$",
+        axA.plot(xr, yc + ref * (xr - xc), ls=(0, (5, 3)), lw=2.0, color=COL[rule],
+                 alpha=0.95, zorder=3, solid_capstyle="round")
+    axA.set(xlabel=r"Birth volume $V_b$ (normalized)",
+            ylabel=r"Division volume $V_d$ (normalized)",
             title="(a) The size-control slope discriminator")
-    axA.legend(loc="upper left", frameon=False, fontsize=10.5)
+    leg = opaque_legend(axA, loc="lower right", markerscale=2.6, fontsize=10.5,
+                        title="Soifer-Amir 2016 regimes\n(dashed = published target)",
+                        title_fontsize=10.5)
+    leg._legend_box.align = "left"
 
-    axB.plot(gen, tvb, "-", lw=2.0, color=VERM, label="Sub-doubling timer (collapses)")
-    axB.plot(gen, svb, "-", lw=2.0, color=BLUE, label="Inhibitor-dilution sizer (stable)")
-    axB.set(xlabel="Generation", ylabel="Birth volume",
+    axB.plot(gen, tvb, "-", lw=2.4, color=VERM, marker="s", ms=5, markevery=4,
+             markeredgecolor="white", markeredgewidth=0.5,
+             label="Sub-doubling timer (collapses)")
+    axB.plot(gen, svb, "-", lw=2.4, color=BLUE, marker="o", ms=5, markevery=4,
+             markeredgecolor="white", markeredgewidth=0.5,
+             label="Inhibitor-dilution sizer (stable)")
+    axB.set(xlabel="Generation", ylabel="Birth volume (fL)",
             title="(b) The sizer stabilizes what the timer collapses")
-    axB.legend(loc="center right", frameon=False, fontsize=11)
+    axB.set_xlim(min(gen), max(gen))
+    opaque_legend(axB, loc="center right", fontsize=11)
 
     fig.tight_layout()
+    issues = pub_audit(fig)
+    assert not issues, "discriminator pub_audit: " + "; ".join(issues)
     out = HERE / "discriminator.png"
     fig.savefig(out, bbox_inches="tight")
-    print("wrote", out)
+    print("wrote", out, "| audit clean")
 
 
 if __name__ == "__main__":

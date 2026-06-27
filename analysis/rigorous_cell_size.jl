@@ -46,7 +46,9 @@ function mother_lineage(;
     r_max=0.90,
     r_tau=14.0,  # daughter/mother size ratio rises with age (asymmetry erosion)
     damage_form=1.0,                  # damage formed per cycle (arb. units)
-    dmg_slow=1.6,                     # cycle lengthening per unit accumulated damage (min)
+    dmg_slow=12.0,                    # cycle lengthening per unit accumulated damage (min): calibrated
+    # so the cycle reaches ~5.2x its young value by end of life (Egilmez & Jazwinski 1989 ~5-6x;
+    # young ~83 min ~ Fehrmann/Charvin 2013 78.3 min)
     phantom_founder=false,            # dormant opt-in (default OFF; see notes below)
     rate=dVdt,
 )

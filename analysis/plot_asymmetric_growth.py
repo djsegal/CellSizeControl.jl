@@ -28,7 +28,8 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from scipy.optimize import curve_fit
 
-from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+from _pubstyle import (apply_style, pub_arrow, halo, opaque_legend, pub_audit,
+                       BLUE, VERM, GREEN)
 
 HERE = Path(__file__).resolve().parent
 # Okabe-Ito colorblind-safe palette (science-space standard): mother = blue,
@@ -84,11 +85,11 @@ def panel_timecourse(ax):
     ax.set_title("(a) Lineage growth over the replicative lifespan")
     ax.set_xlim(0, t.max())
     ax.set_ylim(0, vt.max() * 1.14)
-    ax.legend(loc="upper left", frameon=False, fontsize=11, handlelength=1.4)
-    # the monotonic-mother invariant, stated where it reads
-    ax.annotate("Mother body never shrinks\n(only the bud detaches)",
-                xy=(t.max() * 0.34, vm[int(len(vm) * 0.34)] * 0.55),
-                fontsize=11, color=BLUE, ha="center", va="center")
+    opaque_legend(ax, loc="upper left", fontsize=11, handlelength=1.4)
+    # the monotonic-mother invariant, stated where it reads (haloed so the fill can't cut it)
+    halo(ax.annotate("Mother body never shrinks\n(only the bud detaches)",
+                     xy=(t.max() * 0.34, vm[int(len(vm) * 0.34)] * 0.55),
+                     fontsize=11, color=BLUE, ha="center", va="center"))
 
 
 def panel_maternal(ax):
@@ -111,47 +112,54 @@ def panel_maternal(ax):
     ax.plot(xm, ym, "-", color=BLUE, lw=1.8, zorder=3, solid_capstyle="round")
     ax.plot(xd, yd, "-", color=VERM, lw=1.8, zorder=3, solid_capstyle="round")
     lo = min(min(dau), min(mom)) - 2
-    hi = max(max(dau), max(mom)) + 4
+    hi = max(max(dau), max(mom)) + 18  # headroom so the upper-left annotation clears the curves
     ax.set_ylim(lo, hi)
     ax.set_xlim(0, RLS + 1)
     # the markers are deterministic model output; the lines are the closed-form laws the
     # mechanism follows (a saturating exponential; a product of two saturating processes).
     # No R^2 is reported -- fitting a smooth curve to noiseless output is tautologically ~1.
     a, b, c = pm
-    ax.text(0.045, 0.96,
-            f"Mother: $V_m = {a:.0f} - {abs(b):.0f}\\,e^{{{c:.2g}\\,g}}$",
-            transform=ax.transAxes, color=BLUE, fontsize=11, va="top", ha="left")
-    ax.text(0.955, 0.07,
-            "Daughter: $V_d = r(g)\\,V_m,\\ r{:}\\,0.7{\\to}0.9$",
-            transform=ax.transAxes, color=VERM, fontsize=11, va="bottom", ha="right")
-    # Published reference for the DIRECTION + magnitude of the trend: daughters of older
-    # mothers are born larger (Johnston 1966, Antonie van Leeuwenhoek 32:94 -- directional).
-    # Yang et al. 2011 (Cell Cycle 10:144, Table 1 / Fig 2A) quantify it: virgin daughters
-    # ~6.9 um diameter -> terminal ~11.2 um, ~4x volume over the lifespan. Diameter-based and
-    # not directly overlayable on this fL axis, so it is stated as a reference trend, with an
-    # arrow marking the published direction (small early -> large late), not a fake curve.
-    g_late = max(gen)
-    d_early, d_late = dau[gen.index(min(gen))], dau[gen.index(g_late)]
-    ax.annotate(
-        "Daughters of old mothers are\nborn larger (Johnston 1966;\n"
-        "Yang 2011, ~6.9 → 11 µm, ~4× vol)",
-        xy=(g_late * 0.86, d_late * 0.965), xycoords="data",
-        xytext=(g_late * 0.40, (d_early + d_late) * 0.5), textcoords="data",
-        fontsize=10, color="0.30", ha="left", va="center",
-        arrowprops=dict(arrowstyle="->", color="0.45", lw=1.0,
-                        connectionstyle="arc3,rad=-0.15"))
+    halo(ax.text(0.045, 0.50,
+                 f"Mother: $V_m = {a:.0f} - {abs(b):.0f}\\,e^{{{c:.2g}\\,g}}$",
+                 transform=ax.transAxes, color=BLUE, fontsize=11, va="top", ha="left"))
+    halo(ax.text(0.955, 0.06,
+                 "Daughter: $V_d = r(g)\\,V_m,\\ r{:}\\,0.7{\\to}0.9$",
+                 transform=ax.transAxes, color=VERM, fontsize=11, va="bottom", ha="right"))
+    # Published DIRECTION of the trend: daughters of older mothers are born larger
+    # (Johnston 1966, Antonie van Leeuwenhoek 32:94; Yang et al. 2011, Cell Cycle 10:144).
+    # We annotate the DIRECTION with the model's OWN honest fold-changes -- NOT Yang's ~4x
+    # MOTHER-enlargement number, which belongs to the mother and would be mislabelled if put
+    # on the daughter. In this minimal model the daughter and mother set-points are coupled
+    # (V_dau = r(g) V*(g)), so it cannot reach a ~4x mother without unphysical daughters; over
+    # the lifespan the daughter birth size rises ~1.8x and the mother ~1.4x.
+    g_early, g_late = min(gen), max(gen)
+    d_early, d_late = dau[gen.index(g_early)], dau[gen.index(g_late)]
+    m_early, m_late = mom[gen.index(g_early)], mom[gen.index(g_late)]
+    fold_d, fold_m = d_late / d_early, m_late / m_early
+    # text in the open upper band (above both saturating curves, which top out ~52 fL),
+    # arrow down to the late daughter marker; haloed so the y-gridlines can't cut the glyphs.
+    # Annotate the DIRECTION (text in the clear band above the curves, each line its own short
+    # haloed label so no single bbox spans the rising mother curve) + a bare arrow to the late
+    # daughter marker.
+    pub_arrow(ax, xy=(g_late * 0.95, d_late * 1.0),
+              xytext=(g_late * 0.52, hi - 2.5),
+              color="0.30", lw=1.7, scale=15, shrinkA=2, shrinkB=8,
+              connectionstyle="arc3,rad=-0.25")
+    halo(ax.text(0.045, 0.965, "Old mothers make larger daughters",
+                 transform=ax.transAxes, color="0.30", fontsize=9.5, va="top", ha="left"))
+    halo(ax.text(0.045, 0.905, "(direction: Johnston 1966; Yang 2011)",
+                 transform=ax.transAxes, color="0.30", fontsize=9.5, va="top", ha="left"))
+    halo(ax.text(0.045, 0.845,
+                 f"Model: {fold_d:.1f}x daughter, {fold_m:.1f}x mother",
+                 transform=ax.transAxes, color="0.30", fontsize=9.5, va="top", ha="left"))
     ax.set_xlabel("Maternal replicative age (generations)")
     ax.set_ylabel("Volume (fL)")
     ax.set_title("(b) Maternal-age asymmetry, to the replicative lifespan")
     ax.yaxis.set_major_locator(MultipleLocator(5))
     ax.grid(axis="y", which="major", color="0.9", lw=0.7)
     ax.set_axisbelow(True)
-    leg = ax.legend(loc="lower right", frameon=True, fontsize=10.5, handletextpad=0.4,
-                    bbox_to_anchor=(1.0, 0.16))
-    leg.get_frame().set_facecolor("white")
-    leg.get_frame().set_edgecolor("0.15")
-    leg.get_frame().set_linewidth(0.8)
-    leg.get_frame().set_alpha(1.0)
+    opaque_legend(ax, loc="lower right", fontsize=10.5, handletextpad=0.4,
+                  bbox_to_anchor=(1.0, 0.16))
     return r2m, r2d
 
 
@@ -161,9 +169,11 @@ def main():
     panel_timecourse(axL)
     r2m, r2d = panel_maternal(axR)
     fig.tight_layout(w_pad=2.0)
+    issues = pub_audit(fig)
+    assert not issues, "asymmetric_growth pub_audit: " + "; ".join(issues)
     out = HERE / "asymmetric_growth.png"
     fig.savefig(out, bbox_inches="tight")
-    print(f"wrote {out}  (mother R2={r2m:.5f}, daughter R2={r2d:.5f})")
+    print(f"wrote {out}  (mother R2={r2m:.5f}, daughter R2={r2d:.5f}) | audit clean")
 
 
 if __name__ == "__main__":

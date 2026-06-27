@@ -17,7 +17,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from _pubstyle import apply_style, BLUE, VERM, GREEN, OKABE
+from _pubstyle import (apply_style, opaque_legend, halo, pub_audit,
+                       BLUE, VERM, GREEN)
 
 HERE = Path(__file__).resolve().parent
 
@@ -60,25 +61,38 @@ def main():
                 label=f"Model mean {m:.1f} (CV {sd / m:.2f})")
     axA.set(xlabel="Replicative lifespan (divisions)", ylabel="Cells",
             title="(a) Emergent RLS distribution vs published target")
-    axA.legend(loc="upper right", frameon=False, fontsize=10.5)
+    opaque_legend(axA, loc="upper right", fontsize=10.5)
     axA.set_xlim(0, np.percentile(rls, 99.5) + 3)
 
-    # (b) damage trajectories accelerating to each cell's threshold
+    # (b) each cell's damage trajectory accelerates to ITS OWN viability threshold D_crit (a
+    # per-cell lognormal draw -- the source of RLS spread). The senescence marker sits where
+    # the green damage curve crosses that cell's dashed grey D_crit line. Each dashed line is
+    # drawn at the cell's threshold and a short tick to the right of the crossing makes clear
+    # the dot is ON its own threshold, not a single shared line.
     for i, (c, (ages, dmg)) in enumerate(sorted(traces.items())):
         axB.plot(ages, dmg, "-", lw=1.8, color=GREEN, alpha=0.85,
                  solid_capstyle="round")
-        axB.plot([ages[-1]], [dmg[-1]], "o", ms=5, color=VERM, zorder=5)
-        axB.hlines(thr[c], 0, ages[-1], color="0.75", lw=0.8, linestyles="dotted")
-    axB.plot([], [], "-", color=GREEN, label="Accumulated damage $D(a)$")
-    axB.plot([], [], "o", color=VERM, label="Senescence (threshold crossed)")
+        # dashed per-cell threshold, extended a little past the crossing so the dot reads as ON it
+        axB.hlines(thr[c], 0, ages[-1] * 1.06, color="0.55", lw=1.0, linestyles=(0, (4, 3)),
+                   zorder=2)
+        axB.plot([ages[-1]], [dmg[-1]], "o", ms=6, color=VERM, zorder=5,
+                 markeredgecolor="white", markeredgewidth=0.6)
+    # legend proxies: curve, per-cell threshold line, senescence marker
+    axB.plot([], [], "-", color=GREEN, lw=1.8, label=r"Accumulated damage $D(a)$")
+    axB.plot([], [], ls=(0, (4, 3)), color="0.55", lw=1.0,
+             label=r"Per-cell viability threshold $D_{\rm crit}$")
+    axB.plot([], [], "o", color=VERM, markeredgecolor="white", markeredgewidth=0.6,
+             label=r"Senescence ($D$ crosses $D_{\rm crit}$)")
     axB.set(xlabel="Replicative age (divisions)", ylabel="Mother accumulated damage (a.u.)",
             title="(b) Autocatalytic damage reaches the viability threshold")
-    axB.legend(loc="upper left", frameon=False, fontsize=11)
+    opaque_legend(axB, loc="lower right", fontsize=10.5)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
+    issues = pub_audit(fig)
+    assert not issues, "emergent_lifespan pub_audit: " + "; ".join(issues)
     out = HERE / "emergent_lifespan.png"
     fig.savefig(out, bbox_inches="tight")
-    print("wrote", out, f"| mean={m:.1f} CV={sd / m:.2f}")
+    print("wrote", out, f"| mean={m:.1f} CV={sd / m:.2f} | audit clean")
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@
 #     followed by a fixed Cln2 TIMER step (Di Talia 2007, two-module G1). A cell born small
 #     spends real time growing to V* (long G1); a cell already >= V* starts on the timer
 #     alone (short G1). => mother short-G1, daughter long-G1 EMERGES, not imposed.
-#   - Budded (S/G2/M) = a size-invariant TIMER tau_bud (Leitao & Lucena 2018).
+#   - Budded (S/G2/M) = a size-invariant TIMER tau_bud (Allard 2018).
 #
 # Step 1 (this file): validate the CORE against Di Talia 2007 — mother G1 ~= 19 min,
 # daughter G1 ~= 45 min — and the Soifer-Amir size-control slope (sizer -> ~0 in small
@@ -33,8 +33,9 @@ const slope = size_control_slope
 # CS-DA: a mother lineage with maternal-age asymmetry erosion. The Start size V*(a) rises
 # (the mother enlarges with replicative age) and the division asymmetry erodes (beta(a) up,
 # so the daughter takes a growing slice of the mother's body, toward symmetric division
-# near death; Cdc42 polarity loss, Kennedy 1994). ONE age function then makes late
-# daughters LARGER -- the size face of the same asymmetry erosion as AGE-3's damage face.
+# near death; Cdc42 polarity loss). ONE age function then makes late
+# daughters LARGER (Johnston 1966; Yang 2011) -- the size face of the same asymmetry erosion as
+# AGE-3's damage face.
 function mother_lineage(;
     n_max=29,                         # 30 generations = the budding-yeast replicative lifespan (~25-30; Schnitzer 2022)
     Vstar0=36.0,
@@ -82,15 +83,16 @@ function mother_lineage(;
         G1 = T_cln2
         # CORRECT division accounting: the mother KEEPS her cell body (monotonic, never
         # shrinks); only the BUD pinches off as the daughter. "Old mothers -> larger
-        # daughters" (Kennedy 1994) comes from the bud growing as a rising fraction ratio(a)
+        # daughters" (Johnston 1966; Yang 2011) comes from the bud growing as a rising fraction ratio(a)
         # of the ENLARGING mother (a bigger mother feeds a bigger bud => division gets less
         # asymmetric), NOT from the mother giving up a slice of herself.
         Vdaughter = Vs * ratio(a)                      # the bud (daughter); mother stays at Vs
         Vm = Vs                                         # mother kept her body -> next cycle's start
         Dm += damage_form                              # mother accrues damage with replicative age
         # the SAME age-eroding asymmetry that grows the daughter also sets how much of the
-        # mother's accrued damage she inherits: young -> rejuvenated, old -> larger AND more
-        # damaged (Kennedy: old-mother daughters reduced lifespan). One mechanism, two faces.
+        # mother's accrued damage she inherits: young -> rejuvenated, old -> larger (Johnston
+        # 1966; Yang 2011) AND more damaged (Kennedy 1994: old-mother daughters reduced
+        # lifespan). One mechanism, two faces.
         Ddaughter = (ratio(a) / r_max) * Dm
         cycle = G1 + tau_bud + dmg_slow * Dm           # timer G1 + budded + damage-driven slowing
         push!(
@@ -161,8 +163,8 @@ function main()
         "  large/mother  range slope = $(round(sl; digits=2))  (timer -> >0; Di Talia mother near-timer)",
     )
 
-    # CS-DA: daughter size vs maternal generation (Kennedy 1994: old mothers -> larger daughters)
-    println("=== CS-DA: daughter size vs maternal generation (Kennedy 1994) ===")
+    # CS-DA: daughter size vs maternal generation (Johnston 1966; Yang 2011: old mothers -> larger daughters)
+    println("=== CS-DA: daughter size vs maternal generation (Johnston 1966; Yang 2011) ===")
     L = mother_lineage()
     real = filter(r -> !r.phantom, L)          # T8: validated generations (1..N), phantom excluded
     ph = filter(r -> r.phantom, L)

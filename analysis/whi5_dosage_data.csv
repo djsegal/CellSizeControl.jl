@@ -1,0 +1,23 @@
+# Experimental Whi5-dosage vs cell-size data for the V* proportional-to-W test.
+#
+# Mean cell volume in G1 for budding-yeast strains varying WHI5 gene copy number
+# and ploidy, NORMALIZED to haploid cells with one WHI5 copy (= 1.00).
+# Source: Schmoller, Turner, Koivomagi & Skotheim, Nature 526:268-272 (2015),
+#   cell-volume measurements, as digitized in Heldt, Lunstone, Tyson & Novak,
+#   PLoS Comput. Biol. 14(10):e1006548 (2018), Figure 3C, "light" (data) bars.
+#   Bar heights read at pixel precision from the published figure and calibrated
+#   against the y-axis gridlines (haploid 1xWHI5 = 1.00, diploid 2xWHI5 = 2.01).
+#   Cross-checked against the PRIMARY source (Schmoller 2015): its Coulter-counter
+#   size distributions (Fig. 3b-d; Extended Data Fig. 4d) independently confirm that
+#   extra WHI5 copies enlarge cells and that diploids are ~2x haploid size, corroborating
+#   the direction and magnitude of these normalized values. The heights carry an estimated
+#   few-percent reading/calibration uncertainty, far below the gap to the 2.0x proportional law.
+# whi5_amount = total Whi5 protein per cycle, relative to 1xWHI5. Whi5 is a
+#   size-independent gene whose synthesis scales with copy number and is ~ploidy
+#   independent (Schmoller 2015; Heldt 2018), so whi5_amount tracks WHI5 copies.
+# size_rel = mean G1 cell volume, normalized to haploid 1xWHI5.
+label,ploidy,whi5_copies,whi5_amount,size_rel,source
+haploid_1xWHI5,1,1,1.0,1.00,Schmoller2015/Heldt2018-Fig3C
+haploid_2xWHI5,1,2,2.0,1.40,Schmoller2015/Heldt2018-Fig3C
+diploid_1xWHI5,2,1,1.0,1.71,Schmoller2015/Heldt2018-Fig3C
+diploid_2xWHI5,2,2,2.0,2.01,Schmoller2015/Heldt2018-Fig3C

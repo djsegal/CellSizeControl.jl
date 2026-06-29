@@ -47,9 +47,11 @@ function mother_lineage(;
     r_max=0.90,
     r_tau=14.0,  # daughter/mother size ratio rises with age (asymmetry erosion)
     damage_form=1.0,                  # damage formed per cycle (arb. units)
-    dmg_slow=12.0,                    # cycle lengthening per unit accumulated damage (min): calibrated
+    dmg_kappa=0.043,                  # autocatalysis rate (ABC posterior): ONE unified damage law,
+    # the same autocatalytic accrual used by the emergent-lifespan calculation (no longer linear)
+    dmg_slow=5.6,                     # cycle lengthening per unit accumulated damage (min): calibrated
     # so the cycle reaches ~5.2x its young value by end of life (Egilmez & Jazwinski 1989 ~5-6x;
-    # young ~83 min ~ Fehrmann/Charvin 2013 78.3 min)
+    # young ~77 min ~ Fehrmann/Charvin 2013 78.3 min)
     phantom_founder=false,            # dormant opt-in (default OFF; see notes below)
     rate=dVdt,
 )
@@ -88,7 +90,7 @@ function mother_lineage(;
         # asymmetric), NOT from the mother giving up a slice of herself.
         Vdaughter = Vs * ratio(a)                      # the bud (daughter); mother stays at Vs
         Vm = Vs                                         # mother kept her body -> next cycle's start
-        Dm += damage_form                              # mother accrues damage with replicative age
+        Dm += damage_form * (1.0 + dmg_kappa * Dm)     # autocatalytic accrual (unified with the lifespan law)
         # the SAME age-eroding asymmetry that grows the daughter also sets how much of the
         # mother's accrued damage she inherits: young -> rejuvenated, old -> larger (Johnston
         # 1966; Yang 2011) AND more damaged (Kennedy 1994: old-mother daughters reduced

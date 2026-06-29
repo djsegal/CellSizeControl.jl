@@ -52,11 +52,17 @@ def main():
         "daughter": "Daughter: ~{step:.0f} min sizer step",
         "mother": "Mother: ~{step:.0f} min sizer step (born past $V^\\ast$)",
     }
-    for c in ("daughter", "mother"):
-        step = t[c][-1]
-        axA.plot(t[c], C[c], "-", lw=2.4, color=col[c],
-                 label=lbl[c].format(step=step))
-        axA.plot([t[c][-1]], [C[c][-1]], "o", ms=7, color=col[c], zorder=5)
+    # Daughter: a genuine dilution trajectory (the blue curve) whose [Whi5] falls to the Start
+    # threshold over its ~22-min "sizer step"; the marker is where she fires Start.
+    axA.plot(t["daughter"], C["daughter"], "-", lw=2.4, color=col["daughter"],
+             label=lbl["daughter"].format(step=t["daughter"][-1]))
+    axA.plot([t["daughter"][-1]], [C["daughter"][-1]], "o", ms=7, color=col["daughter"], zorder=5)
+    # Mother: born already past V*, so her [Whi5] is below threshold at birth -- she fires Start at
+    # once and has NO dilution curve, only a point. Drawn (and shown in the legend) as a MARKER,
+    # not a line, so the legend matches what is actually on the axes.
+    axA.plot([t["mother"][-1]], [C["mother"][-1]], "o", ms=8.5, color=col["mother"], zorder=5,
+             markeredgecolor="white", markeredgewidth=0.7,
+             label="Mother: fires at once (born past $V^\\ast$)")
     axA.axhline(THRESH, color=VERM, lw=1.8, ls="--",
                 label=r"Start threshold $\theta=c^\ast\approx0.45$")
     axA.set(xlabel="Time in G1 (min)", ylabel=r"Inhibitor concentration $[W]=W/V$",
@@ -83,9 +89,12 @@ def main():
                   f"+ 19 min CLN2 timer\n~{m_step + T_CLN2:.0f} min G1 (timer only)",
                   color=col["mother"], fontsize=10.5, ha="center", va="bottom"))
 
-    for c in ("daughter", "mother"):
-        axB.plot(t[c], V[c], "-", lw=2.4, color=col[c])
-        axB.plot([t[c][-1]], [V[c][-1]], "o", ms=7, color=col[c], zorder=5)
+    # Same logic in volume: the daughter grows from her small birth size up to V* (blue curve);
+    # the mother is born past V* and fires at once (green marker, no curve).
+    axB.plot(t["daughter"], V["daughter"], "-", lw=2.4, color=col["daughter"])
+    axB.plot([t["daughter"][-1]], [V["daughter"][-1]], "o", ms=7, color=col["daughter"], zorder=5)
+    axB.plot([t["mother"][-1]], [V["mother"][-1]], "o", ms=8.5, color=col["mother"], zorder=5,
+             markeredgecolor="white", markeredgewidth=0.7)
     axB.axhline(VSTAR, color=VERM, lw=1.8, ls="--", label=r"Critical size $V^\ast = W/\theta$")
     axB.set(xlabel="Time in G1 (min)", ylabel="Cell volume (fL)",
             title="(b) Growth to the critical size $V^\\ast$")

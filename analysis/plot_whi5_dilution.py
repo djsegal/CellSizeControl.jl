@@ -76,10 +76,10 @@ def main():
     # when the series is already colour-coded).
     d_step, m_step = t["daughter"][-1], t["mother"][-1]
     ylo = cmin - 0.06
-    halo(axA.text(d_step * 0.62 + 5.0, ylo + 0.008,
+    halo(axA.text(d_step * 0.62 + 5.0, ylo + 0.018,
                   f"+ 19 min CLN2 timer\n~{d_step + T_CLN2:.0f} min total G1",
                   color=col["daughter"], fontsize=10.5, ha="center", va="bottom"))
-    halo(axA.text(d_step * 0.22 - 0.33, ylo + 0.008,
+    halo(axA.text(d_step * 0.22 - 0.33, ylo + 0.018,
                   f"+ 19 min CLN2 timer\n~{m_step + T_CLN2:.0f} min G1 (timer only)",
                   color=col["mother"], fontsize=10.5, ha="center", va="bottom"))
 

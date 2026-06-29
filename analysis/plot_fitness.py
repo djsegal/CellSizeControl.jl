@@ -69,7 +69,7 @@ def main():
     # No arrow: the cycle curve is already green and named in the legend, so this is just a boxed
     # reference note set cleanly inside the 250-300 gridline band (checklist: drop the arrow when the
     # series is already colour-coded + legended).
-    axB.text(max(gen) * 0.5, 118,
+    axB.text(max(gen) * 0.5, 135,
              "Cycle lengthens with age (Egilmez &\n"
              f"Jazwinski 1989, ~5-6×; G1-specific,\nMoreno 2019). Model: {fold:.1f}×",
              color="0.20", fontsize=10, ha="left", va="center", linespacing=1.35,

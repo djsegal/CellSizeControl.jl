@@ -93,7 +93,7 @@ def main() -> None:
     # reference lines drawn ABOVE the bars (z-order) so the gray bar's white border can't chop the
     # y=2.0 dashed line to half-thickness; labels boxed (not halo) with a clean unicode x
     axB.axhline(2.0, color="0.45", lw=1.3, ls="--", zorder=3)
-    axB.axhline(1.0, color="0.55", lw=1.1, ls=":", zorder=3)
+    axB.axhline(1.0, color="0.1", lw=1.3, ls=":", zorder=3)  # near-black so it reads over the orange + gray bars
     _rbox = dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="0.7", alpha=0.95)
     axB.text(2.46, 2.08, "proportional (2×)", fontsize=9.5, color="0.25",
              ha="right", va="bottom", zorder=6, bbox=_rbox)

@@ -64,7 +64,7 @@ def main():
     # headroom below the threshold so the annotations sit in the clear band under the curve
     cmin = min(min(C[c]) for c in ("daughter", "mother"))
     cmax = max(max(C[c]) for c in ("daughter", "mother"))
-    axA.set_ylim(0.35, cmax + 0.02)
+    axA.set_ylim(0.35, 0.65)  # headroom so the upper-right legend clears the blue daughter curve
     opaque_legend(axA, loc="upper right", fontsize=11)
 
     # Spell out the two-step G1 for each cell: sizer step + 19-min CLN2 timer. Each arrow is a
@@ -76,10 +76,10 @@ def main():
     # when the series is already colour-coded).
     d_step, m_step = t["daughter"][-1], t["mother"][-1]
     ylo = cmin - 0.06
-    halo(axA.text(d_step * 0.62 + 5.0, ylo + 0.018,
+    halo(axA.text(d_step * 0.62 + 5.0, ylo + 0.028,
                   f"+ 19 min CLN2 timer\n~{d_step + T_CLN2:.0f} min total G1",
                   color=col["daughter"], fontsize=10.5, ha="center", va="bottom"))
-    halo(axA.text(d_step * 0.22 - 0.33, ylo + 0.018,
+    halo(axA.text(d_step * 0.22 - 0.33, ylo + 0.028,
                   f"+ 19 min CLN2 timer\n~{m_step + T_CLN2:.0f} min G1 (timer only)",
                   color=col["mother"], fontsize=10.5, ha="center", va="bottom"))
 

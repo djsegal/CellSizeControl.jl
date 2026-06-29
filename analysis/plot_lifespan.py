@@ -62,7 +62,7 @@ def main():
     axA.set(xlabel="Replicative lifespan (divisions)", ylabel="Cells",
             title="(a) Emergent RLS distribution vs published target")
     axA.set_xlim(0, np.percentile(rls, 99.5) + 3)
-    axA.set_ylim(0, 300)  # headroom so the upper-right legend clears the histogram bars
+    axA.set_ylim(0, 400)  # headroom so the upper-right legend clears the histogram bars
     opaque_legend(axA, loc="upper right", fontsize=10.5)
 
     # (b) each cell's damage trajectory accelerates to ITS OWN viability threshold D_crit (a
@@ -83,7 +83,7 @@ def main():
         else:
             a_cross = ages[-1]; ax_a, ax_d = ages, dmg
         axB.plot(ax_a, ax_d, "-", lw=1.8, color=GREEN, alpha=0.85, solid_capstyle="round")
-        axB.hlines(T, 0, a_cross * 1.04, color="0.55", lw=1.0, linestyles=(0, (4, 3)), zorder=2)
+        axB.hlines(T, 0, a_cross, color="0.55", lw=1.0, linestyles=(0, (4, 3)), zorder=2)
         axB.plot([a_cross], [T], "o", ms=6, color=VERM, zorder=5,
                  markeredgecolor="white", markeredgewidth=0.6)
     # legend proxies: curve, per-cell threshold line, senescence marker

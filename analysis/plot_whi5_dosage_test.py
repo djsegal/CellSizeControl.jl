@@ -80,7 +80,7 @@ def main() -> None:
                   fontsize=9.5, color="0.35", ha="right", va="bottom"))
     axA.set(xlabel=r"Whi5 dose $W$ (relative to $1\times$ WHI5)",
             ylabel=r"Cell size $V^\ast$ (relative to $1\times$ WHI5)",
-            title="(a) Critical size rises with Whi5 dose", xlim=(0, 2.6), ylim=(0, 2.6))
+            title="(a) Critical size rises with Whi5 dose", xlim=(0, 2.6), ylim=(0, 3.0))
     opaque_legend(axA, loc="upper left", fontsize=10.5, markerscale=1.0, labelspacing=0.7)
 
     # (b) fold-change for a 2x Whi5 dose: predicted vs observed
@@ -95,9 +95,9 @@ def main() -> None:
     axB.axhline(2.0, color="0.45", lw=1.3, ls="--", zorder=3)
     axB.axhline(1.0, color="0.55", lw=1.1, ls=":", zorder=3)
     _rbox = dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="0.7", alpha=0.95)
-    axB.text(2.46, 2.05, "proportional (2×)", fontsize=9.5, color="0.25",
+    axB.text(2.46, 2.08, "proportional (2×)", fontsize=9.5, color="0.25",
              ha="right", va="bottom", zorder=6, bbox=_rbox)
-    axB.text(2.46, 0.93, "no change (1×)", fontsize=9.5, color="0.25",
+    axB.text(2.46, 0.92, "no change (1×)", fontsize=9.5, color="0.25",
              ha="right", va="top", zorder=6, bbox=_rbox)
     for x, f in zip(xpos, folds):
         halo(axB.text(x, f + 0.05, f"{f:.2f}$\\times$", ha="center", va="bottom",

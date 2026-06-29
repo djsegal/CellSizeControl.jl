@@ -51,12 +51,13 @@ def main() -> None:
     _, _, SL = load_grid("phase_alpha_f.csv", "slope")
     # signed log-ratio (homeostatic ~0 vs runaway large +): a DIVERGING quantity, so use the
     # CB-safe diverging colormap (vik) centred at 0 via TwoSlopeNorm. No RdBu.
-    # centre the diverging map at 0 (mild collapse < 0 < runaway) but clip to the ACTUAL data range:
-    # the old symmetric vmin=-max|LR| painted a huge blue/negative band the data (min ~ -0.5) never
-    # reach, while runaway reaches ~+41, so almost the entire negative half of the bar went unused.
-    norm = TwoSlopeNorm(vcenter=0.0, vmin=float(np.nanmin(LR)), vmax=float(np.nanmax(LR)))
+    # vik (CB-safe + print-safe, via cmcrameri) centred at 0. Clip to the homeostatic range so the
+    # near-0 structure (90% of cells lie in [-0.5, 1.1]) is resolved; the runaway tail (top ~5%, up
+    # to +41) saturates and is marked by the colorbar's extend arrow. A full -|max|..|max| range
+    # would give the tiny negative side half the bar (the misleading "-40" look).
+    norm = TwoSlopeNorm(vcenter=0.0, vmin=-0.6, vmax=1.2)
     pcm = axA.pcolormesh(A, F, LR, cmap=DIV_CMAP, norm=norm, shading="auto")
-    cb = fig.colorbar(pcm, ax=axA, pad=0.02)
+    cb = fig.colorbar(pcm, ax=axA, pad=0.02, extend="max", ticks=[-0.5, 0.0, 0.5, 1.0])
     cb.set_label(r"$\log_{10}(V_{\rm end}/V_0)$  (runaway $\to$)", fontsize=11)
     # sizer/adder/timer bin edges as slope contours; labels haloed so the field can't cut them
     cs = axA.contour(A, F, SL, levels=[0.5, 1.5], colors="k", linewidths=1.1, linestyles="-")
@@ -84,10 +85,9 @@ def main() -> None:
             title="(b) Where the discriminator becomes unreliable", xlim=(A2.min(), A2.max()),
             ylim=(CV.min(), CV.max()))
     # white text on the dark (low-misclass) viridis region, haloed dark so it survives lighter cells
-    halo(axB.text(0.04, 0.285, "n=80 cells, 300 replicates", transform=axB.transAxes,
-                  fontsize=10, color="w", va="top"), fg="0.12")
-    halo(axB.text(0.04, 0.215, "hard: strong sizers + bin edges", transform=axB.transAxes,
-                  fontsize=10, color="w", va="top"), fg="0.12")
+    axB.text(0.04, 0.30, "n=80 cells, 300 replicates\nhard: strong sizers + bin edges",
+             transform=axB.transAxes, fontsize=10, color="0.15", va="top", linespacing=1.3,
+             bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.6", alpha=0.92))
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     issues = pub_audit(fig)

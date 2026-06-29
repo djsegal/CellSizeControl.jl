@@ -122,7 +122,7 @@ def panel_maternal(ax):
     a, b, c = pm
     # Mother eq lifted into the clear band above the mother curve; daughter eq moved left, off the
     # lower-right legend. Each label is colour-matched to its curve (no arrow needed).
-    halo(ax.text(0.045, 0.625,
+    halo(ax.text(0.045, 0.646,
                  f"Mother: $V_m = {a:.0f} - {abs(b):.0f}\\,e^{{{c:.2g}\\,g}}$",
                  transform=ax.transAxes, color=BLUE, fontsize=11, va="top", ha="left"))
     halo(ax.text(0.745, 0.06,
@@ -146,7 +146,7 @@ def panel_maternal(ax):
     # daughter marker.
     # One boxed comment in the clear upper band (no arrow: it states a general direction the rising
     # daughter curve already shows, and a cross-panel arrow only crowded the data).
-    ax.text(0.5, 0.965,
+    ax.text(0.629, 0.944,
             "Old mothers make larger daughters\n(direction: Johnston 1966; Yang 2011)\n"
             f"Model: {fold_d:.1f}× daughter, {fold_m:.1f}× mother",
             transform=ax.transAxes, color="0.15", fontsize=9.5, va="top", ha="center",

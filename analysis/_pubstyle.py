@@ -74,6 +74,7 @@ def apply_style() -> None:
             "font.size": 12,
             "axes.titlesize": 13,
             "axes.labelsize": 12,
+            "axes.labelpad": 6.0,  # a touch more gap between axis labels and the tick numbers
             "axes.spines.top": False,
             "axes.spines.right": False,
             "axes.linewidth": 0.8,

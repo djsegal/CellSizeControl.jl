@@ -63,10 +63,12 @@ def main() -> None:
     # turns into the grey unstable branch, i.e. where Start fires), not into empty space above it
     isn = branches["off"][0].index(cstar)
     x_sn = branches["off"][1][isn]
-    axA.annotate("", xy=(cstar + 0.02, x_sn), xytext=(2.5, x_sn + 0.16),
-                 arrowprops=dict(arrowstyle="-|>", color="0.35", lw=1.7, mutation_scale=14,
-                                 shrinkA=2, shrinkB=4))
-    axA.text(1.9, x_sn + 0.22, "Growth dilutes Whi5", fontsize=11, color="0.35", ha="center")
+    axA.annotate("Growth dilutes Whi5", xy=(cstar + 0.04, x_sn), xycoords="data",
+                 xytext=(2.15, x_sn + 0.20), textcoords="data",
+                 fontsize=11, color="0.2", ha="left", va="center",
+                 bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.6", alpha=0.95),
+                 arrowprops=dict(arrowstyle="-|>", color="0.4", lw=1.6, mutation_scale=13,
+                                 shrinkA=5, shrinkB=4, connectionstyle="arc3,rad=0.12"))
     axA.set(xlabel=r"Whi5 concentration $c=W/V$", ylabel="SBF activity (Start commitment)",
             title="(a) Whi5 dilution drives a bistable switch", xlim=(0, 3.0), ylim=(-0.03, 1.05))
     axA.legend(loc="lower right", frameon=False, fontsize=11)

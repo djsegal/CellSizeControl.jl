@@ -1,0 +1,7 @@
+# Python deps for the figure-rendering scripts (plot_*.py). Use a venv:
+#   python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+matplotlib>=3.7
+numpy>=1.24
+scipy>=1.10
+cmcrameri>=1.9   # Crameri's vik diverging colormap (CB-safe + print-safe); _pubstyle falls
+                 # back to coolwarm if absent, but the phase-diagram figure expects vik

@@ -127,11 +127,13 @@ def main():
     axB.set_ylim(0, 33)
     axB.grid(axis="y", which="major", color="0.9", lw=0.7)
     axB.set_axisbelow(True)
-    halo(axB.text(0.5, 0.60,
-                  f"fold-drop\nmodel {model_fold:.1f}× ({fold_ci[1]:.1f}–{fold_ci[2]:.1f})"
-                  f"\nvs data {ken_fold:.1f}×",
-                  transform=axB.transAxes, ha="center", va="center", fontsize=10.5,
-                  fontweight="bold", linespacing=1.4))
+    # Centered over the old-mother bar pair (data x=1.0, the divider between its blue/orange bars),
+    # in the clear space above the short old-mother bars. Boxed for readability (not a halo hack).
+    axB.text(1.0, 16.0,
+             f"fold-drop\nmodel {model_fold:.1f}× ({fold_ci[1]:.1f}–{fold_ci[2]:.1f})"
+             f"\nvs data {ken_fold:.1f}×",
+             ha="center", va="center", fontsize=10.5, fontweight="bold", linespacing=1.4,
+             bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor="0.6", alpha=0.95))
     opaque_legend(axB, loc="upper right", fontsize=9.5)
 
     fig.tight_layout(rect=(0, 0, 1, 0.94))

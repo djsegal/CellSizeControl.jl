@@ -63,21 +63,32 @@ def main():
     axA.set(xlabel=r"Birth volume $V_b$ (normalized)",
             ylabel=r"Division volume $V_d$ (normalized)",
             title="(a) The size-control slope discriminator")
+    axA.set_ylim(bottom=0)  # honest baseline + opens room under the lower-right legend
     leg = opaque_legend(axA, loc="lower right", markerscale=2.6, fontsize=10.5,
                         title="Soifer-Amir 2016 regimes\n(dashed = published target)",
                         title_fontsize=10.5)
     leg._legend_box.align = "left"
 
-    axB.plot(gen, tvb, "-", lw=2.4, color=VERM, marker="s", ms=5, markevery=4,
-             markeredgecolor="white", markeredgewidth=0.5,
-             label="Sub-doubling timer (collapses)")
-    axB.plot(gen, svb, "-", lw=2.4, color=BLUE, marker="o", ms=5, markevery=4,
-             markeredgecolor="white", markeredgewidth=0.5,
-             label="Inhibitor-dilution sizer (stable)")
-    axB.set(xlabel="Generation", ylabel="Birth volume (fL)",
-            title="(b) The sizer stabilizes what the timer collapses")
+    # Dual y-axis: the sizer holds near 20 fL while the sub-doubling timer collapses toward 0; on a
+    # shared axis the collapse is invisible (squished at the bottom), so each series gets its own scale.
+    lS, = axB.plot(gen, svb, "-", lw=2.4, color=BLUE, marker="o", ms=5, markevery=4,
+                   markeredgecolor="white", markeredgewidth=0.5,
+                   label="Inhibitor-dilution sizer (stable)")
+    axB.set_xlabel("Generation")
+    axB.set_ylabel("Sizer birth volume (fL)", color=BLUE)
+    axB.tick_params(axis="y", labelcolor=BLUE)
+    axB.set_ylim(bottom=0)
+    axB.set_title("(b) The sizer stabilizes what the timer collapses")
     axB.set_xlim(min(gen), max(gen))
-    opaque_legend(axB, loc="center right", fontsize=11)
+    axBt = axB.twinx()
+    axBt.spines["top"].set_visible(False)
+    lT, = axBt.plot(gen, tvb, "-", lw=2.4, color=VERM, marker="s", ms=5, markevery=4,
+                    markeredgecolor="white", markeredgewidth=0.5,
+                    label="Sub-doubling timer (collapses)")
+    axBt.set_ylabel("Timer birth volume (fL)", color=VERM)
+    axBt.tick_params(axis="y", labelcolor=VERM)
+    axBt.set_ylim(bottom=0)
+    opaque_legend(axB, loc="center right", fontsize=11, handles=[lS, lT])
 
     fig.tight_layout()
     issues = pub_audit(fig)

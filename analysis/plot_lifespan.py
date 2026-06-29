@@ -61,8 +61,9 @@ def main():
                 label=f"Model mean {m:.1f} (CV {sd / m:.2f})")
     axA.set(xlabel="Replicative lifespan (divisions)", ylabel="Cells",
             title="(a) Emergent RLS distribution vs published target")
-    opaque_legend(axA, loc="upper right", fontsize=10.5)
     axA.set_xlim(0, np.percentile(rls, 99.5) + 3)
+    axA.set_ylim(0, 300)  # headroom so the upper-right legend clears the histogram bars
+    opaque_legend(axA, loc="upper right", fontsize=10.5)
 
     # (b) each cell's damage trajectory accelerates to ITS OWN viability threshold D_crit (a
     # per-cell lognormal draw -- the source of RLS spread). The senescence marker sits where
@@ -70,12 +71,20 @@ def main():
     # drawn at the cell's threshold and a short tick to the right of the crossing makes clear
     # the dot is ON its own threshold, not a single shared line.
     for i, (c, (ages, dmg)) in enumerate(sorted(traces.items())):
-        axB.plot(ages, dmg, "-", lw=1.8, color=GREEN, alpha=0.85,
-                 solid_capstyle="round")
-        # dashed per-cell threshold, extended a little past the crossing so the dot reads as ON it
-        axB.hlines(thr[c], 0, ages[-1] * 1.06, color="0.55", lw=1.0, linestyles=(0, (4, 3)),
-                   zorder=2)
-        axB.plot([ages[-1]], [dmg[-1]], "o", ms=6, color=VERM, zorder=5,
+        ages = np.asarray(ages, float); dmg = np.asarray(dmg, float); T = thr[c]
+        # Senescence is the FIRST age D >= D_crit; the raw last point overshoots the threshold,
+        # which made the red dot float above its dashed line. Interpolate the exact crossing so the
+        # green curve, the dashed threshold, and the senescence dot all meet at one point.
+        k = int(np.argmax(dmg >= T)) if np.any(dmg >= T) else len(dmg) - 1
+        if 0 < k < len(dmg) and dmg[k] >= T > dmg[k - 1]:
+            f = (T - dmg[k - 1]) / (dmg[k] - dmg[k - 1])
+            a_cross = ages[k - 1] + f * (ages[k] - ages[k - 1])
+            ax_a = np.append(ages[:k], a_cross); ax_d = np.append(dmg[:k], T)
+        else:
+            a_cross = ages[-1]; ax_a, ax_d = ages, dmg
+        axB.plot(ax_a, ax_d, "-", lw=1.8, color=GREEN, alpha=0.85, solid_capstyle="round")
+        axB.hlines(T, 0, a_cross * 1.04, color="0.55", lw=1.0, linestyles=(0, (4, 3)), zorder=2)
+        axB.plot([a_cross], [T], "o", ms=6, color=VERM, zorder=5,
                  markeredgecolor="white", markeredgewidth=0.6)
     # legend proxies: curve, per-cell threshold line, senescence marker
     axB.plot([], [], "-", color=GREEN, lw=1.8, label=r"Accumulated damage $D(a)$")

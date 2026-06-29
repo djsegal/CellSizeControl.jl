@@ -87,9 +87,10 @@ def panel_timecourse(ax):
     ax.set_ylim(0, vt.max() * 1.14)
     opaque_legend(ax, loc="upper left", fontsize=11, handlelength=1.4)
     # the monotonic-mother invariant, stated where it reads (haloed so the fill can't cut it)
+    # near-black for contrast on the light-blue fill (printer-grayscale / CVD / dim-screen safe)
     halo(ax.annotate("Mother body never shrinks\n(only the bud detaches)",
                      xy=(t.max() * 0.34, vm[int(len(vm) * 0.34)] * 0.55),
-                     fontsize=11, color=BLUE, ha="center", va="center"))
+                     fontsize=11, color="0.12", ha="center", va="center"))
 
 
 def panel_maternal(ax):
@@ -119,10 +120,12 @@ def panel_maternal(ax):
     # mechanism follows (a saturating exponential; a product of two saturating processes).
     # No R^2 is reported -- fitting a smooth curve to noiseless output is tautologically ~1.
     a, b, c = pm
-    halo(ax.text(0.045, 0.50,
+    # Mother eq lifted into the clear band above the mother curve; daughter eq moved left, off the
+    # lower-right legend. Each label is colour-matched to its curve (no arrow needed).
+    halo(ax.text(0.045, 0.625,
                  f"Mother: $V_m = {a:.0f} - {abs(b):.0f}\\,e^{{{c:.2g}\\,g}}$",
                  transform=ax.transAxes, color=BLUE, fontsize=11, va="top", ha="left"))
-    halo(ax.text(0.955, 0.06,
+    halo(ax.text(0.745, 0.06,
                  "Daughter: $V_d = r(g)\\,V_m,\\ r{:}\\,0.7{\\to}0.9$",
                  transform=ax.transAxes, color=VERM, fontsize=11, va="bottom", ha="right"))
     # Published DIRECTION of the trend: daughters of older mothers are born larger
@@ -141,17 +144,14 @@ def panel_maternal(ax):
     # Annotate the DIRECTION (text in the clear band above the curves, each line its own short
     # haloed label so no single bbox spans the rising mother curve) + a bare arrow to the late
     # daughter marker.
-    pub_arrow(ax, xy=(g_late * 0.95, d_late * 1.0),
-              xytext=(g_late * 0.52, hi - 2.5),
-              color="0.30", lw=1.7, scale=15, shrinkA=2, shrinkB=8,
-              connectionstyle="arc3,rad=-0.25")
-    halo(ax.text(0.045, 0.965, "Old mothers make larger daughters",
-                 transform=ax.transAxes, color="0.30", fontsize=9.5, va="top", ha="left"))
-    halo(ax.text(0.045, 0.905, "(direction: Johnston 1966; Yang 2011)",
-                 transform=ax.transAxes, color="0.30", fontsize=9.5, va="top", ha="left"))
-    halo(ax.text(0.045, 0.845,
-                 f"Model: {fold_d:.1f}x daughter, {fold_m:.1f}x mother",
-                 transform=ax.transAxes, color="0.30", fontsize=9.5, va="top", ha="left"))
+    # One boxed comment in the clear upper band (no arrow: it states a general direction the rising
+    # daughter curve already shows, and a cross-panel arrow only crowded the data).
+    ax.text(0.5, 0.965,
+            "Old mothers make larger daughters\n(direction: Johnston 1966; Yang 2011)\n"
+            f"Model: {fold_d:.1f}× daughter, {fold_m:.1f}× mother",
+            transform=ax.transAxes, color="0.15", fontsize=9.5, va="top", ha="center",
+            linespacing=1.35,
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor="0.6", alpha=0.95))
     ax.set_xlabel("Maternal replicative age (generations)")
     ax.set_ylabel("Volume (fL)")
     ax.set_title("(b) Maternal-age asymmetry, to the replicative lifespan")

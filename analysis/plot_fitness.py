@@ -66,16 +66,14 @@ def main():
     axB.set_ylim(min(cyc) - 8, max(cyc) * 1.06)
     axB.grid(axis="y", which="major", color="0.9", lw=0.7)
     axB.set_axisbelow(True)
-    # the published direction/magnitude as a reference trend, with the model's OWN matching
-    # fold; a thick filled-triangle arrow (pub_arrow) up to the late model cycle marker.
-    halo(pub_arrow(
-        axB, xy=(max(gen) * 0.80, cyc[int(len(cyc) * 0.80)]),
-        xytext=(max(gen) * 0.10, max(cyc) * 0.80),
-        text=("Cycle lengthens with age (Egilmez &\n"
-              f"Jazwinski 1989, ~5-6x; G1-specific,\nMoreno 2019). Model: {fold:.1f}x"),
-        color="0.30", lw=1.8, scale=15, shrinkB=8,
-        connectionstyle="arc3,rad=0.18",
-        fontsize=10, ha="left", va="center"))
+    # No arrow: the cycle curve is already green and named in the legend, so this is just a boxed
+    # reference note set cleanly inside the 250-300 gridline band (checklist: drop the arrow when the
+    # series is already colour-coded + legended).
+    axB.text(max(gen) * 0.17, 275,
+             "Cycle lengthens with age (Egilmez &\n"
+             f"Jazwinski 1989, ~5-6×; G1-specific,\nMoreno 2019). Model: {fold:.1f}×",
+             color="0.20", fontsize=10, ha="left", va="center", linespacing=1.35,
+             bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor="0.6", alpha=0.95))
     opaque_legend(axB, loc="upper left", fontsize=11)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))

@@ -81,7 +81,7 @@ def main() -> None:
     axA.set(xlabel=r"Whi5 dose $W$ (relative to $1\times$ WHI5)",
             ylabel=r"Cell size $V^\ast$ (relative to $1\times$ WHI5)",
             title="(a) Critical size rises with Whi5 dose", xlim=(0, 2.6), ylim=(0, 2.6))
-    opaque_legend(axA, loc="upper left", fontsize=10.5)
+    opaque_legend(axA, loc="upper left", fontsize=10.5, markerscale=1.0, labelspacing=0.7)
 
     # (b) fold-change for a 2x Whi5 dose: predicted vs observed
     labels = ["Model\n(proportional)", "Data\nhaploid", "Data\ndiploid"]
@@ -90,12 +90,15 @@ def main() -> None:
     xpos = [0, 1, 2]
     axB.bar(xpos, folds, width=0.62, color=colors, zorder=2,
             edgecolor="white", linewidth=0.6)
-    axB.axhline(2.0, color="0.5", lw=1.3, ls="--", zorder=1)
-    axB.axhline(1.0, color="0.6", lw=1.1, ls=":", zorder=1)
-    halo(axB.text(2.46, 2.02, "proportional ($2\\times$)", fontsize=9.5, color="0.4",
-                  ha="right", va="bottom"))
-    halo(axB.text(2.46, 0.955, "no change ($1\\times$)", fontsize=9.5, color="0.45",
-                  ha="right", va="top"))
+    # reference lines drawn ABOVE the bars (z-order) so the gray bar's white border can't chop the
+    # y=2.0 dashed line to half-thickness; labels boxed (not halo) with a clean unicode x
+    axB.axhline(2.0, color="0.45", lw=1.3, ls="--", zorder=3)
+    axB.axhline(1.0, color="0.55", lw=1.1, ls=":", zorder=3)
+    _rbox = dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="0.7", alpha=0.95)
+    axB.text(2.46, 2.05, "proportional (2×)", fontsize=9.5, color="0.25",
+             ha="right", va="bottom", zorder=6, bbox=_rbox)
+    axB.text(2.46, 0.93, "no change (1×)", fontsize=9.5, color="0.25",
+             ha="right", va="top", zorder=6, bbox=_rbox)
     for x, f in zip(xpos, folds):
         halo(axB.text(x, f + 0.05, f"{f:.2f}$\\times$", ha="center", va="bottom",
                       fontsize=11.5, color="0.15"))

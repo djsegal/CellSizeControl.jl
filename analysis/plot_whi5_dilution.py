@@ -71,25 +71,17 @@ def main():
     # thick filled triangle (pub_arrow) and TARGETS ITS OWN COLOURED MARKER (the cell's Start
     # firing point), NOT the red threshold line. shrinkB keeps the triangle head off the marker
     # so it isn't buried under it.
+    # No arrows: each curve is already colour-coded (blue daughter, green mother), so the
+    # two-step-G1 note is just a colour-matched label near each curve (checklist: drop the arrow
+    # when the series is already colour-coded).
     d_step, m_step = t["daughter"][-1], t["mother"][-1]
-    d_conc, m_conc = C["daughter"][-1], C["mother"][-1]
     ylo = cmin - 0.06
-    # daughter: text in the clear band BELOW the threshold, arrow up to the daughter's marker
-    halo(pub_arrow(
-        axA, xy=(d_step, d_conc),  # the daughter's own Start marker (not the red line)
-        xytext=(d_step * 0.62, ylo + 0.018),
-        text=f"+ 19 min CLN2 timer\n~{d_step + T_CLN2:.0f} min total G1",
-        color=col["daughter"], lw=2.0, scale=15, shrinkB=10,
-        connectionstyle="arc3,rad=-0.2",
-        fontsize=10.5, ha="center", va="bottom"))
-    # mother: born past V*, fires at once -- arrow up to its marker at t=0
-    halo(pub_arrow(
-        axA, xy=(m_step, m_conc),
-        xytext=(d_step * 0.22, ylo + 0.018),
-        text=f"+ 19 min CLN2 timer\n~{m_step + T_CLN2:.0f} min G1 (timer only)",
-        color=col["mother"], lw=2.0, scale=15, shrinkB=10,
-        connectionstyle="arc3,rad=0.25",
-        fontsize=10.5, ha="center", va="bottom"))
+    halo(axA.text(d_step * 0.62 + 5.0, ylo + 0.118,
+                  f"+ 19 min CLN2 timer\n~{d_step + T_CLN2:.0f} min total G1",
+                  color=col["daughter"], fontsize=10.5, ha="center", va="bottom"))
+    halo(axA.text(d_step * 0.22 - 0.33, ylo + 0.118,
+                  f"+ 19 min CLN2 timer\n~{m_step + T_CLN2:.0f} min G1 (timer only)",
+                  color=col["mother"], fontsize=10.5, ha="center", va="bottom"))
 
     for c in ("daughter", "mother"):
         axB.plot(t[c], V[c], "-", lw=2.4, color=col[c])

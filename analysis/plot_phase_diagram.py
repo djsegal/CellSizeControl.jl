@@ -51,8 +51,10 @@ def main() -> None:
     _, _, SL = load_grid("phase_alpha_f.csv", "slope")
     # signed log-ratio (homeostatic ~0 vs runaway large +): a DIVERGING quantity, so use the
     # CB-safe diverging colormap (vik) centred at 0 via TwoSlopeNorm. No RdBu.
-    lim = float(np.nanmax(np.abs(LR)))
-    norm = TwoSlopeNorm(vcenter=0.0, vmin=-lim, vmax=lim)
+    # centre the diverging map at 0 (mild collapse < 0 < runaway) but clip to the ACTUAL data range:
+    # the old symmetric vmin=-max|LR| painted a huge blue/negative band the data (min ~ -0.5) never
+    # reach, while runaway reaches ~+41, so almost the entire negative half of the bar went unused.
+    norm = TwoSlopeNorm(vcenter=0.0, vmin=float(np.nanmin(LR)), vmax=float(np.nanmax(LR)))
     pcm = axA.pcolormesh(A, F, LR, cmap=DIV_CMAP, norm=norm, shading="auto")
     cb = fig.colorbar(pcm, ax=axA, pad=0.02)
     cb.set_label(r"$\log_{10}(V_{\rm end}/V_0)$  (runaway $\to$)", fontsize=11)

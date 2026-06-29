@@ -59,9 +59,14 @@ def main() -> None:
     axA.axvline(cstar, color=VERM, lw=1.8, ls=":")
     axA.text(cstar + 0.07, 0.72, r"Start at $c^\ast=W/V^\ast$", color=VERM, fontsize=11,
              ha="left", va="center")
-    axA.annotate("", xy=(cstar + 0.04, 0.30), xytext=(2.55, 0.30),
-                 arrowprops=dict(arrowstyle="->", color="0.35", lw=1.6))
-    axA.text(1.55, 0.35, "Growth dilutes Whi5", fontsize=11, color="0.35", ha="center")
+    # point the dilution arrow AT the OFF-branch saddle-node (where the blue OFF curve ends and
+    # turns into the grey unstable branch, i.e. where Start fires), not into empty space above it
+    isn = branches["off"][0].index(cstar)
+    x_sn = branches["off"][1][isn]
+    axA.annotate("", xy=(cstar + 0.02, x_sn), xytext=(2.5, x_sn + 0.16),
+                 arrowprops=dict(arrowstyle="-|>", color="0.35", lw=1.7, mutation_scale=14,
+                                 shrinkA=2, shrinkB=4))
+    axA.text(1.9, x_sn + 0.22, "Growth dilutes Whi5", fontsize=11, color="0.35", ha="center")
     axA.set(xlabel=r"Whi5 concentration $c=W/V$", ylabel="SBF activity (Start commitment)",
             title="(a) Whi5 dilution drives a bistable switch", xlim=(0, 3.0), ylim=(-0.03, 1.05))
     axA.legend(loc="lower right", frameon=False, fontsize=11)

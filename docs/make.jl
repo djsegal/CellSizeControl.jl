@@ -35,6 +35,6 @@ makedocs(
 # Publish to GitHub Pages (gh-pages branch). A no-op when run locally; on CI it
 # deploys via GITHUB_TOKEN / DOCUMENTER_KEY (active once the repo is public).
 deploydocs(;
-    repo      = "github.com/djsegal/cell-size-control",
+    repo      = "github.com/djsegal/CellSizeControl.jl",
     devbranch = "main",
 )

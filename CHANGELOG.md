@@ -12,7 +12,11 @@ project loosely follows [Keep a Changelog](https://keepachangelog.com/) and
   source docstrings: the daughter-size increase is attributed to Johnston 1966 and
   Yang et al. 2011, and Kennedy 1994 to the reduced replicative lifespan of
   old-mother daughters (matching the manuscripts). Updated the README status to
-  reflect the public, tagged repo. Documentation only; no code or API change.
+  reflect the public, tagged repo, and corrected the README's benchmark wording to
+  match the manuscripts (the size-control parameterization vs the separately
+  ABC-calibrated lifespan). Made the software authorship metadata consistent
+  (`.zenodo.json` now matches `Project.toml`/`CITATION.cff`: Daniel J. Segal).
+  Documentation/metadata only; no code or API change.
 
 ## [0.1.0] - 2026-06-26
 

@@ -50,8 +50,10 @@ leaves.
 
 ## Science grounding
 
-One parameterization reproduces seven independent published benchmarks (see the cross-validation
-in `analysis/`):
+One size-control parameterization reproduces a series of independent published benchmarks — the
+slope discriminator, the inhibitor-dilution sizer, the two-step G1, and the maternal-age
+daughter-size increase — while the replicative-lifespan distribution is separately ABC-calibrated
+(see the cross-validation in `analysis/`):
 
 - **Slope discriminator:** Soifer, Robert & Amir 2016, *Curr Biol* 26:356 (timer 2 / adder 1 /
   sizer 0). **Linear size-control map:** Amir 2014, *Phys Rev Lett* 112:208102.

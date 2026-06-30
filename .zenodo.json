@@ -4,8 +4,7 @@
   "upload_type": "software",
   "license": "MIT",
   "creators": [
-    { "name": "Segal, Daniel J." },
-    { "name": "Klipp, Edda" }
+    { "name": "Segal, Daniel J." }
   ],
   "keywords": [
     "Saccharomyces cerevisiae",

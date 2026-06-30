@@ -25,11 +25,11 @@ makedocs(
     sitename = "CellSizeControl.jl",
     modules  = [CellSizeControl],
     authors  = "Daniel J. Segal",
-    pages    = ["Home" => "index.md", "Tutorials" => ["tutorials/sizer_lineage.md"]],
+    pages    = ["Home" => "index.md", "Showcase" => ["showcase/discriminator.md", "showcase/sizer_forgets.md", "showcase/whi5_dose.md"]],
     # Run doctests during the build; fail on broken/missing cross-references.
     doctest  = true,
     checkdocs = :exports,
-    format   = Documenter.HTML(; prettyurls = get(ENV, "CI", "false") == "true"),
+    format   = Documenter.HTML(; prettyurls = false),
 )
 
 # Publish to GitHub Pages (gh-pages branch). A no-op when run locally; on CI it

@@ -31,3 +31,10 @@ makedocs(
     checkdocs = :exports,
     format   = Documenter.HTML(; prettyurls = get(ENV, "CI", "false") == "true"),
 )
+
+# Publish to GitHub Pages (gh-pages branch). A no-op when run locally; on CI it
+# deploys via GITHUB_TOKEN / DOCUMENTER_KEY (active once the repo is public).
+deploydocs(;
+    repo      = "github.com/djsegal/cell-size-control",
+    devbranch = "main",
+)

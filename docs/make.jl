@@ -25,7 +25,7 @@ makedocs(
     sitename = "CellSizeControl.jl",
     modules  = [CellSizeControl],
     authors  = "Daniel J. Segal",
-    pages    = ["Home" => "index.md"],
+    pages    = ["Home" => "index.md", "Tutorials" => ["tutorials/sizer_lineage.md"]],
     # Run doctests during the build; fail on broken/missing cross-references.
     doctest  = true,
     checkdocs = :exports,

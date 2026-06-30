@@ -5,6 +5,7 @@ authors:
   - family-names: Segal
     given-names: Daniel J.
     email: dansegal2@gmail.com
+    orcid: "https://orcid.org/0009-0009-7489-7723"
 version: 0.1.1
 license: MIT
 type: software

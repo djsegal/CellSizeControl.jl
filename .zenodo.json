@@ -4,7 +4,7 @@
   "upload_type": "software",
   "license": "MIT",
   "creators": [
-    { "name": "Segal, Daniel J." }
+    { "name": "Segal, Daniel J.", "orcid": "0009-0009-7489-7723" }
   ],
   "keywords": [
     "Saccharomyces cerevisiae",

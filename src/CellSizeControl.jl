@@ -299,7 +299,7 @@ Maternal-age erosion of division asymmetry. A young mother divides strongly
 asymmetrically (the daughter inherits a small fraction `alpha0` of the division
 volume); as replicative `age` rises the asymmetry erodes toward symmetric division
 (`alpha_max`, ≈0.5), modeling the age-dependent loss of polarity/segregation control
-(Kennedy, Austriaco & Guarente 1994):
+(the maternal-age decline in division fidelity underlying replicative aging):
 `alpha(age) = alpha0 + (alpha_max - alpha0)·(1 - e^{-age/tau})`.
 """
 function aging_daughter_fraction(
@@ -317,15 +317,15 @@ end
 
 `enlarge_max` adds the maternal-enlargement face: the division set-point rises with
 replicative age as `V*(a) = V*·(1 + enlarge_max·(1−e^(−a/enlarge_tau)))` (old mothers are
-larger; Kennedy 1994). With `enlarge_max=0` (default) the set-point is fixed and only the
+larger; Johnston 1966, Yang et al. 2011). With `enlarge_max=0` (default) the set-point is fixed and only the
 asymmetry erodes — the two faces (size + fitness) then come purely from `α(a)`.
 
 Follow ONE mother through `n` replicative divisions with a maternal-age-dependent
 division asymmetry ([`aging_daughter_fraction`](@ref)). Unlike [`simulate_lineage`](@ref)
 (a fixed daughter fraction), the daughter's birth volume RISES with the mother's
-replicative age, the documented old-mother → larger-daughter relation (Kennedy 1994). The same fraction
-also governs the daughter's INHERITED DAMAGE (`Ddaughter`), so one age-eroding asymmetry
-drives both daughter size and fitness (larger AND shorter-lived old-mother daughters).
+replicative age, the documented old-mother → larger-daughter relation (Johnston 1966; Yang et al. 2011).
+The same fraction also governs the daughter's INHERITED DAMAGE (`Ddaughter`), so one age-eroding asymmetry
+drives both daughter size and fitness (larger AND shorter-lived old-mother daughters; Kennedy 1994).
 The mother keeps her cell body at division (monotonic, never shrinks); only the bud leaves.
 Returns per-generation series.
 """
@@ -368,7 +368,7 @@ function simulate_aging_lineage(
     end
     for a in 0:(n - 1)
         # maternal enlargement: the size set-point rises with replicative age (old mothers
-        # are larger; Kennedy 1994), V*(a) = V*·(1 + enlarge_max·(1−e^(−a/enlarge_tau))).
+        # are larger; Johnston 1966, Yang et al. 2011), V*(a) = V*·(1 + enlarge_max·(1−e^(−a/enlarge_tau))).
         # enlarge_max=0 (default) keeps the fixed set-point -- the documented contract.
         grow = 1.0 + enlarge_max * (1.0 - exp(-a / enlarge_tau))
         d = division_volume(rule, vm) * grow * (1 + cv * randn(rng))
@@ -377,7 +377,7 @@ function simulate_aging_lineage(
         # CORRECT division accounting: the mother KEEPS her cell body (monotonic, never
         # shrinks); the daughter is the BUD, a rising fraction `frac(a)` of the enlarging
         # mother (bigger mother feeds a bigger bud => division gets less asymmetric, the
-        # Kennedy direction), NOT a slice carved out of the mother. The same `frac(a)` sets
+        # documented direction), NOT a slice carved out of the mother. The same `frac(a)` sets
         # how much accrued damage the daughter inherits -- one mechanism, two faces.
         vdau = frac * d
         # per-cycle damage production; damage_cv adds multiplicative noise (floored at 0, so

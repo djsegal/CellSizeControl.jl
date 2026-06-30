@@ -61,8 +61,9 @@ in `analysis/`):
 - **Two-step G1:** Di Talia, Skotheim, Bean, Siggia & Cross 2007, *Nature* 448:947 (mother ≈ 19
   min, daughter ≈ 45 min). **Budded timer:** Allard, Decker, Weiner, Toettcher & Graziano 2018,
   *PLoS One* 13:e0209301.
-- **Maternal-age daughter size:** Kennedy, Austriaco & Guarente 1994, *J Cell Biol* 127:1985.
-  **Replicative lifespan:** ABC-calibrated to McCormick et al. 2015, *Cell Metab* 22:895
+- **Maternal-age daughter size:** Johnston 1966, *Antonie van Leeuwenhoek* 32:94; Yang et al. 2011,
+  *Cell Cycle* 10:144. **Old-mother daughter lifespan deficit:** Kennedy, Austriaco & Guarente 1994,
+  *J Cell Biol* 127:1985. **Replicative lifespan:** ABC-calibrated to McCormick et al. 2015, *Cell Metab* 22:895
   (wild-type mean ≈ 26.6, CV ≈ 0.37).
 - Full source notes: the parent workshop's `docs/literature/AUDIT_NOTES.md` §4.
 
@@ -72,11 +73,11 @@ in `analysis/`):
 V\*=W/thresh; the bistable switch is genuinely hysteretic and gives V\*=W/c\*), L2 reference (a
 sub-doubling timer collapses a lineage while the inhibitor-dilution sizer holds it; the Di Talia
 G1 split), L3 cross-source (slope monotone in timer strength), plus the maternal-age lineage
-(monotonic mother, Kennedy magnitude), the emergent-lifespan calibration, and the
+(monotonic mother, the documented daughter-size magnitude), the emergent-lifespan calibration, and the
 Aqua / ExplicitImports / JET quality gates. Self-contained — no domain dependencies.
 
 ## Status
 
-Spun out of the `yeast-wcm-workshop` incubator. **Private pending the public-release gate**;
-when released it becomes its own public, citable repo with CI and a Documenter site, destined
-for the General registry (see `RELEASE.md` and `CHANGELOG.md`).
+Spun out of the `yeast-wcm-workshop` incubator. **Public and citable** (v0.1.0, MIT) — its own
+repo with CI and a Documenter site. Zenodo DOI and General-registry registration are still pending
+(see `RELEASE.md` and `CHANGELOG.md`).

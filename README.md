@@ -1,5 +1,7 @@
 # CellSizeControl.jl
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21082583.svg)](https://doi.org/10.5281/zenodo.21082583)
+
 Generic cell-size-control primitives in Julia: the **sizer / adder / timer** rules, the
 model-agnostic **slope discriminator**, the budding-yeast **inhibitor-dilution sizer** (and a
 mechanistic **bistable Whi5:SBF switch** that reproduces it from first principles), a two-step

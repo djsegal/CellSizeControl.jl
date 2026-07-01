@@ -212,6 +212,22 @@ using Statistics: mean, std
         @test ph.Ddaughter[1] == 0.0                            # founder pristine (no inherited damage)
         @test length(ph.gen) == length(L.gen) + 1               # exactly one extra row vs default
         @test ph.Vdaughter[2:end] == L.Vdaughter                # real gens 1..N unchanged
+
+        # Mechanism decomposition (ablation): the daughter-lifespan deficit is driven principally
+        # by the maternal-damage trajectory, NOT by the age-erosion of the asymmetry. Inherited
+        # damage Ddaughter rises with maternal age even when the
+        # asymmetry fraction is held CONSTANT (alpha0 == alpha_max), because the mother's damage
+        # pool D_m accumulates. This is the honest basis for the "r(a) couples, D_m(a) drives"
+        # framing in the manuscript (gen_daughter_rls_ablation.jl quantifies the fold).
+        const_share = simulate_aging_lineage(
+            SizerRule(60.0); n=25, alpha0=0.4, alpha_max=0.4, tau=8.0, damage_form=1.0, cv=0.0,
+        )
+        @test const_share.Ddaughter[end] > const_share.Ddaughter[2]     # rises w/ age at fixed share
+        # and the age-eroding share amplifies (does not generate) the late-age inherited burden:
+        eroding_share = simulate_aging_lineage(
+            SizerRule(60.0); n=25, alpha0=0.4, alpha_max=0.9, tau=8.0, damage_form=1.0, cv=0.0,
+        )
+        @test eroding_share.Ddaughter[end] > const_share.Ddaughter[end]  # erosion amplifies late burden
     end
 
     # ---- AGE-2: the replicative lifespan EMERGES from autocatalytic damage + a threshold ----

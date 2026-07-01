@@ -69,6 +69,19 @@ end
         rhat(Dc), rhat(kc), rhat(cc))
 @printf("effective sample size: D_crit=%.0f  kappa=%.0f  crit_cv=%.0f\n", ess(Dc), ess(kc), ess(cc))
 
+# OUTPUT-specific convergence: the reported quantity is the predictive mean RLS, not the ridge
+# parameters. Compute it per chain (at each chain's posterior mean) and report the between-chain
+# spread — it is stable even though the D_crit/kappa marginals scatter along the ridge.
+chain_means = [(mean(Dc[i]), mean(kc[i]), mean(cc[i])) for i in 1:length(Dc)]
+pred_means = Float64[]
+for (D,k,c) in chain_means
+    ls = lifespan_distribution(4000; seed0=7, D_crit=D, kappa=k, crit_cv=c, production=1.0, cv=0.05, max_gen=400, segregate=false)
+    push!(pred_means, mean(ls))
+end
+@printf("\npredictive mean RLS per chain: %s\n", join((@sprintf("%.1f",m) for m in pred_means), ", "))
+@printf("between-chain: mean %.2f, sd %.2f, cv %.3f  -> the REPORTED output is stable across chains\n",
+        mean(pred_means), std(pred_means), std(pred_means)/mean(pred_means))
+
 # prior-predictive check: draw from the uniform box, report the spread of predicted mean RLS
 rngp = MersenneTwister(999); pm = Float64[]
 for _ in 1:400

@@ -98,6 +98,14 @@ end
 The target division volume `V*` of a size-controlling rule (the sizers and the bistable
 switch): `SizerRule`'s `Vstar`, the inhibitor-dilution `W/thresh`, or the emergent
 `Whi5SBFSwitch` set-point. Defined only for rules that have a fixed set-point.
+
+```jldoctest
+julia> setpoint_volume(SizerRule(40.0))
+40.0
+
+julia> setpoint_volume(InhibitorDilutionSizer(720.0, 18.0))   # V* = W/thresh
+40.0
+```
 """
 setpoint_volume(r::SizerRule) = r.Vstar
 setpoint_volume(r::InhibitorDilutionSizer) = r.W / r.thresh
@@ -109,6 +117,17 @@ The (deterministic) division volume `Vd` for a [`SizeControlRule`](@ref) given b
 `Vb`: `fold·Vb` for a timer, `Vb + Δ` for an adder, the set-point `V*` for a sizer, and
 `α·Vb + β` for the linear map. The least-squares slope of `Vd` on `Vb` is the size-control
 discriminator ([`size_control_slope`](@ref)).
+
+```jldoctest
+julia> division_volume(AdderRule(10.0), 5.0)   # adder: Vb + Δ
+15.0
+
+julia> division_volume(TimerRule(2.0), 5.0)    # timer: fold·Vb
+10.0
+
+julia> division_volume(SizerRule(40.0), 12.0)  # sizer: V*, independent of Vb
+40.0
+```
 """
 division_volume(r::TimerRule, Vb) = r.fold * Vb
 division_volume(r::AdderRule, Vb) = Vb + r.delta
@@ -301,6 +320,14 @@ volume); as replicative `age` rises the asymmetry erodes toward symmetric divisi
 (`alpha_max`, ≈0.5), modeling the age-dependent loss of polarity/segregation control
 (the maternal-age decline in division fidelity underlying replicative aging):
 `alpha(age) = alpha0 + (alpha_max - alpha0)·(1 - e^{-age/tau})`.
+
+```jldoctest
+julia> aging_daughter_fraction(0)   # a young mother divides strongly asymmetrically (α0)
+0.32
+
+julia> aging_daughter_fraction(1000)   # very old: asymmetry erodes toward symmetric (α_max)
+0.5
+```
 """
 function aging_daughter_fraction(
     age::Real; alpha0::Real=0.32, alpha_max::Real=0.5, tau::Real=10.0
@@ -525,6 +552,14 @@ grow `Vb → V*`, zero for a mother already ≥ V*) plus a fixed **Cln2 timer** 
 which the bud grows on its own geometry from `bud_seed`. So a mother (born ≥ V*) has
 G1 ≈ `T_cln2`, while a daughter (born small) spends extra time reaching V* — the
 mother/daughter G1 asymmetry EMERGES, it is not imposed. Returns the phase + size readout.
+
+```jldoctest
+julia> cell_cycle(40.0; Vstar=40.0).G1   # mother born at V*: no sizer wait, G1 = T_cln2
+19.0
+
+julia> cell_cycle(20.0).G1 > cell_cycle(40.0).G1   # a small daughter waits longer in G1
+true
+```
 """
 function cell_cycle(
     Vb::Real;
@@ -615,6 +650,19 @@ end
 
 Least-squares slope of division volume on birth volume. **timer → 2, adder → 1,
 sizer → 0** (symmetric division). The model-agnostic size-control classifier.
+
+```jldoctest
+julia> Vb = [1.0, 2.0, 3.0];
+
+julia> size_control_slope(Vb, Vb .+ 10)    # adder: Vd = Vb + Δ
+1.0
+
+julia> size_control_slope(Vb, [40.0, 40.0, 40.0])   # sizer: Vd = V*
+0.0
+
+julia> size_control_slope(Vb, 2 .* Vb)     # timer: Vd = 2·Vb
+2.0
+```
 """
 function size_control_slope(Vb::AbstractVector, Vd::AbstractVector)
     x = float.(Vb)
@@ -627,6 +675,20 @@ end
     classify_control(slope; atol=0.35) -> Symbol
 
 Map a `Vd`-vs-`Vb` slope to `:sizer` (0) / `:adder` (1) / `:timer` (2) / `:mixed`.
+
+```jldoctest
+julia> classify_control(0.0)
+:sizer
+
+julia> classify_control(1.0)
+:adder
+
+julia> classify_control(2.0)
+:timer
+
+julia> classify_control(0.5)   # between the canonical rules
+:mixed
+```
 """
 function classify_control(slope::Real; atol::Real=0.35)
     isapprox(slope, 0; atol=atol) && return :sizer

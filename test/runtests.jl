@@ -94,6 +94,43 @@ using Statistics: mean, std
         @test last(runaway.Vb) > 10 * first(runaway.Vb)
     end
 
+    # ---- L1: analytic fixed point of the linear size-control map ----
+    # The deterministic (noiseless) lineage Vb_{n+1} = f·(α·Vb_n + β) is an affine contraction
+    # when α·f < 1, with the CLOSED-FORM fixed point Vb* = f·β/(1−α·f) (division Vd* = α·Vb*+β)
+    # reached at geometric rate (α·f)^n. This pins the actual homeostatic set-point the
+    # sizer/adder/timer family converges to — sharper than "stays bounded" — and specialises to
+    # the textbook sizer (α=0 ⇒ Vb*=f·V*) and adder (α=1 ⇒ Vb*=f·Δ/(1−f)) limits.
+    @testset "L1 — linear-map fixed point Vb* = fβ/(1−αf) + scale invariance" begin
+        for (α, β, f) in ((0.0, 40.0, 0.5), (1.0, 20.0, 0.5), (1.5, 20.0, 0.5),
+                          (0.7, 12.0, 0.6), (1.2, 8.0, 0.4))
+            s = simulate_lineage(LinearSizeControl(α, β); V0=5.0, n=400, cv=0.0,
+                                 daughter_fraction=f)
+            Vb_star = f * β / (1 - α * f)
+            @test isapprox(last(s.Vb), Vb_star; rtol=1e-6)              # birth set-point
+            @test isapprox(last(s.Vd), α * Vb_star + β; rtol=1e-6)      # division set-point
+        end
+        # sizer/adder specialisations of the closed form (the textbook limits)
+        sz = simulate_lineage(SizerRule(60.0); V0=5.0, n=300, cv=0.0, daughter_fraction=0.5)
+        @test isapprox(last(sz.Vb), 0.5 * 60.0; rtol=1e-6)             # α=0 → Vb* = f·V*
+        ad = simulate_lineage(AdderRule(20.0); V0=5.0, n=400, cv=0.0, daughter_fraction=0.5)
+        @test isapprox(last(ad.Vb), 0.5 * 20.0 / (1 - 0.5); rtol=1e-6) # α=1 → Vb* = fΔ/(1−f)
+
+        # geometric convergence at the contraction rate α·f: |Vb_n − Vb*| ~ (αf)^n exactly
+        α, β, f = 1.5, 20.0, 0.5
+        s = simulate_lineage(LinearSizeControl(α, β); V0=5.0, n=60, cv=0.0, daughter_fraction=f)
+        Vb_star = f * β / (1 - α * f)
+        err = abs.(s.Vb .- Vb_star)
+        @test isapprox(err[20] / err[10], (α * f)^10; rtol=1e-6)        # rate = (αf)^n
+
+        # dimensional invariance: rescaling the volume UNIT (Vb, Vd → k·) leaves the
+        # sizer/adder/timer slope unchanged — it is a dimensionless classifier
+        base = simulate_lineage(AdderRule(10.0); n=300, seed=3)
+        s0 = size_control_slope(base.Vb, base.Vd)
+        for k in (1e-3, 1e3)
+            @test isapprox(size_control_slope(k .* base.Vb, k .* base.Vd), s0; rtol=1e-9)
+        end
+    end
+
     # ---- L2: reference behaviour — the timer collapses, the sizer is stable ----
     # (reproduces the yeast-wcm CellSize finding: a sub-doubling timer drives
     #  daughters toward 0; the inhibitor-dilution sizer holds them at V*/2.)

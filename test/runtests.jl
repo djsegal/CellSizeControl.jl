@@ -448,6 +448,65 @@ using Statistics: mean, std
         @test minimum(yd .- chord_d) > -0.5        # …and ≈ linear (hugs its chord), unlike (3)
     end
 
+    # ---- AGE-4: size-noise → aging coupling — the timer's amplified size CV broadens RLS ----
+    # In the base model size and damage are INDEPENDENT: the RLS recursion never references the
+    # control mode (default non-conserved damage, segregate=false ⇒ the increment is α/f-free).
+    # Minimal, parameter-free coupling — SIZE-DEPENDENT DAMAGE PRODUCTION (production ∝ volume):
+    # a fractional birth-size fluctuation passes 1:1 into the per-division production noise, so the
+    # damage-noise the recursion sees is cv_damage = A(α,f)·cv_size with the amplification
+    # A(α,f)=1/√(1−(αf)²). A timer (α=2) amplifies size noise; a sizer (α=0) does not (A≡1). The
+    # ONLY channel by which mode reaches RLS is this cv. Prediction: mean RLS (set by the
+    # autocatalytic threshold crossing) is invariant to the mean-1 production noise, but the RLS
+    # DISTRIBUTION broadens with cv_damage — so at matched mean asymmetry f a timer has the same
+    # mean RLS as a sizer and a broader one, and the broadening GROWS as aging symmetrizes division
+    # (f→0.5, A_timer→∞). Falsification: RLS CV independent of control mode at fixed damage
+    # parameters (matched f) — the channel then carries no coupling.
+    @testset "AGE-4 — size-noise → RLS broadening (timer vs sizer)" begin
+        A(α, f) = 1 / sqrt(1 - (α * f)^2)
+        cv_size, f, N = 0.06, 0.40, 40_000
+        rls_stats(cv; crit_cv=0.0) = begin
+            s = [replicative_lifespan(; cv=cv, crit_cv=crit_cv, seed=1 + i) for i in 1:N]
+            (mean=mean(s), cv=std(s) / mean(s))
+        end
+
+        # deterministic cross-check: at cv=0 the RLS is a single fixed number, mode-INDEPENDENT
+        # (the base recursion is α/f-free), so the whole mode effect must live in the noise spread.
+        @test replicative_lifespan(; cv=0.0, crit_cv=0.0, seed=1) ==
+            replicative_lifespan(; cv=0.0, crit_cv=0.0, seed=999)
+
+        # the amplification at (α=2, f=0.4) is exactly 5/3 (r=αf=0.8)
+        @test isapprox(A(2.0, f), 5 / 3; atol=1e-12)
+
+        st_sizer = rls_stats(A(0.0, f) * cv_size)
+        st_adder = rls_stats(A(1.0, f) * cv_size)
+        st_timer = rls_stats(A(2.0, f) * cv_size)
+
+        # (1) MEAN RLS is invariant to control mode through this channel (< 0.5 divisions on ≈26)
+        @test abs(st_timer.mean - st_sizer.mean) < 0.5     # measured Δ ≈ 0.06 div
+
+        # (2) HEADLINE (locked): the timer's RLS CV is broader than the sizer's by ≈1.42×
+        ratio = st_timer.cv / st_sizer.cv
+        @test isapprox(ratio, 1.42; atol=0.10)             # measured 1.42, seed-stable to ~0.01
+
+        # (3) broadening is monotone along the size-CV amplification axis (sizer<adder<timer)
+        @test st_sizer.cv < st_adder.cv < st_timer.cv
+
+        # (4) AGING axis: the timer/sizer RLS-CV ratio GROWS as division symmetrizes (f→0.5),
+        # tracking A_timer→∞; the sizer stays flat. Young (0.32) < mid (0.40) < aged (0.48).
+        ratio_at(fa) = rls_stats(A(2.0, fa) * cv_size).cv / rls_stats(A(0.0, fa) * cv_size).cv
+        r_young, r_mid, r_aged = ratio_at(0.32), ratio_at(0.40), ratio_at(0.48)
+        @test r_young < r_mid < r_aged
+        @test r_aged > 2.0                                 # measured ≈2.7 as division symmetrizes
+
+        # (5) FALSIFICATION handle: at the realistic threshold heterogeneity (crit_cv=0.45) the
+        # cell-to-cell threshold spread DOMINATES and swamps the channel — the RLS CV is then mode-
+        # independent (ratio ≈ 1). So the coupling is only measurable when the threshold spread is
+        # controlled down; equal RLS distributions across modes at large crit_cv do NOT refute it.
+        st_sizer_h = rls_stats(A(0.0, f) * cv_size; crit_cv=0.45)
+        st_timer_h = rls_stats(A(2.0, f) * cv_size; crit_cv=0.45)
+        @test isapprox(st_timer_h.cv / st_sizer_h.cv, 1.0; atol=0.02)  # swamped: ≈1.001
+    end
+
     # ---- CC-P: steady-state population replicative-age structure is geometric ----
     # A growing culture is the ensemble of ALL a mother's descendants, not one lineage. In
     # balanced exponential growth every viable cell buds one age-0 daughter and advances a→a+1

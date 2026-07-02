@@ -62,7 +62,7 @@ def main() -> None:
     axB.axvline(pp.mean(), color=BLUE, lw=1.4, ls="--", ymax=0.68)
     axB.axvline(MEAN_T, color=VERM, lw=1.4, ls=":", ymax=0.68)
     # headroom above the density peak so the legend sits clear of both the bars and the curve
-    ytop = 0.065  # fixed headroom so the legend clears the histogram peak
+    ytop = 0.07  # fixed headroom (clean top tick above 0.06) so the legend clears the peak
     axB.set(xlabel="Replicative lifespan (divisions)", ylabel="Probability density",
             title="(b) Posterior-predictive matches the data", xlim=(0, 60),
             ylim=(0, ytop))

@@ -94,7 +94,7 @@ def main():
              label=r"Senescence ($D$ crosses $D_{\rm crit}$)")
     axB.set(xlabel="Replicative age (divisions)", ylabel="Mother accumulated damage (a.u.)",
             title="(b) Autocatalytic damage reaches the viability threshold")
-    opaque_legend(axB, loc="lower right", fontsize=12)
+    opaque_legend(axB, loc="upper left", bbox_to_anchor=(0.02, 0.92), fontsize=12)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     issues = pub_audit(fig)

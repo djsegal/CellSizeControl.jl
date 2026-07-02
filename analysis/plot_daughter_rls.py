@@ -124,7 +124,7 @@ def main():
                          "daughters of\nold mothers\n(last 10%)"], fontsize=12)
     axB.set_ylabel("Daughter replicative lifespan (divisions)")
     axB.set_title("(b) The rejuvenation deficit", fontsize=13)
-    axB.set_ylim(0, 33)
+    axB.set_ylim(0, 35)
     axB.grid(axis="y", which="major", color="0.9", lw=0.7)
     axB.set_axisbelow(True)
     # Centered over the old-mother bar pair (data x=1.0, the divider between its blue/orange bars),
@@ -134,14 +134,9 @@ def main():
              f"\nvs data {ken_fold:.1f}×",
              ha="center", va="center", fontsize=12, fontweight="bold", linespacing=1.4,
              bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor="0.6", alpha=0.95))
-    # make the absolute offset explicit: the held-out claim is the fold, not the absolute level
-    # (model young/old run ~1/3 below Kennedy while the fold matches).
-    off = 1.0 - model_vals[0] / ken_vals[0]
-    halo(axB.text(-0.02, 32.4,
-                  f"absolute lifespans run ~{off*100:.0f}% low;\n"
-                  "the held-out claim is the fold, not the level",
-                  ha="left", va="top", fontsize=10.5, color="0.30", style="italic"))
-    opaque_legend(axB, loc="upper right", bbox_to_anchor=(1.0, 0.84), fontsize=11)
+    # the absolute-offset caveat (model runs ~1/3 low; the held-out claim is the fold, not the
+    # level) lives in the caption, so the panel stays uncluttered.
+    opaque_legend(axB, loc="upper right", bbox_to_anchor=(1.0, 0.99), fontsize=10.5)
 
     fig.tight_layout(rect=(0, 0, 1, 0.94))
     issues = pub_audit(fig)

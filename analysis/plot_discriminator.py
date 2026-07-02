@@ -64,6 +64,7 @@ def main():
             ylabel=r"Division volume $V_d$ (normalized)",
             title="(a) The size-control slope discriminator")
     axA.set_ylim(bottom=0)  # honest baseline + opens room under the lower-right legend
+    axA.set_xlim(right=1.4)  # cap the birth-volume axis
     leg = opaque_legend(axA, loc="lower right", markerscale=2.6, fontsize=12,
                         title="Soifer-Amir 2016 regimes\n(dashed = published target)",
                         title_fontsize=12)

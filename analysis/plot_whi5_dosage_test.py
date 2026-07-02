@@ -92,13 +92,11 @@ def main() -> None:
             edgecolor="white", linewidth=0.6)
     # reference lines drawn ABOVE the bars (z-order) so the gray bar's white border can't chop the
     # y=2.0 dashed line to half-thickness; labels boxed (not halo) with a clean unicode x
-    axB.axhline(2.0, color="0.45", lw=1.3, ls="--", zorder=3)
-    axB.axhline(1.0, color="0.1", lw=1.3, ls=":", zorder=3)  # near-black so it reads over the orange + gray bars
-    _rbox = dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="0.7", alpha=0.95)
-    axB.text(2.46, 2.08, "proportional (2×)", fontsize=12, color="0.25",
-             ha="right", va="bottom", zorder=6, bbox=_rbox)
-    axB.text(2.46, 0.92, "no change (1×)", fontsize=12, color="0.25",
-             ha="right", va="top", zorder=6, bbox=_rbox)
+    # reference lines labelled in the legend (not floating boxes that would mask the bars)
+    axB.axhline(2.0, color="0.45", lw=1.3, ls="--", zorder=3,
+                label=r"proportional ($2\times$)")
+    axB.axhline(1.0, color="0.1", lw=1.3, ls=":", zorder=3,
+                label=r"no change ($1\times$)")  # near-black so it reads over the bars
     for x, f in zip(xpos, folds):
         halo(axB.text(x, f + 0.13, f"{f:.2f}$\\times$", ha="center", va="bottom",
                       fontsize=11.5, color="0.15"))
@@ -113,13 +111,13 @@ def main() -> None:
     if mixed:
         # offset the markers to the bars' right shoulders so they don't sit on the fold labels
         mx = [1.26, 2.26]; my = [mixed[1], mixed[2]]
-        axB.plot(mx, my, "D", ms=9, mfc="none", mec=GREEN, mew=2.2, zorder=7,
+        axB.plot(mx, my, "D", ms=10, mfc="#9BDBC9", mec=GREEN, mew=2.0, zorder=7,
                  label="Mixed dilution+titration")
         opaque_legend(axB, loc="upper right", fontsize=11, markerscale=1.0)
     axB.set_xticks(xpos)
     axB.set_xticklabels(labels, fontsize=12)
     axB.set(ylabel=r"Size fold-change for $1\times\!\to\!2\times$ WHI5",
-            title="(b) Doubling Whi5 dose (fixed ploidy)", ylim=(0, 2.7))
+            title="(b) Doubling Whi5 dose (fixed ploidy)", ylim=(0, 2.9))
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     issues = pub_audit(fig)

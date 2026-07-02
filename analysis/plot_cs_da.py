@@ -61,9 +61,9 @@ def main():
     axA.plot(xm, ym, "-", color=MOTHER, lw=2.0, solid_capstyle="round")
     axA.plot(xd, yd, "-", color=DAUGHTER, lw=2.0, solid_capstyle="round")
     axA.text(0.045, 0.95, "Mother size at Start", transform=axA.transAxes,
-             color=MOTHER, fontsize=9, va="top", ha="left")
+             color=MOTHER, fontsize=12, va="top", ha="left")
     axA.text(0.97, 0.06, "Daughter birth", transform=axA.transAxes,
-             color=DAUGHTER, fontsize=9, va="bottom", ha="right")
+             color=DAUGHTER, fontsize=12, va="bottom", ha="right")
     axA.set(xlabel="Maternal replicative age (generations)", ylabel="Volume (fL)",
             title="(a) The mother enlarges; daughters grow with her age")
     axA.set_xlim(0, max(gen) + 1)

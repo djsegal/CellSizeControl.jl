@@ -149,7 +149,7 @@ def panel_maternal(ax):
     ax.text(0.629, 0.944,
             "Old mothers make larger daughters\n(direction: Johnston 1966; Yang 2011)\n"
             f"Model: {fold_d:.1f}× daughter, {fold_m:.1f}× mother",
-            transform=ax.transAxes, color="0.15", fontsize=9.5, va="top", ha="center",
+            transform=ax.transAxes, color="0.15", fontsize=12, va="top", ha="center",
             linespacing=1.35,
             bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor="0.6", alpha=0.95))
     ax.set_xlabel("Maternal replicative age (generations)")
@@ -158,7 +158,7 @@ def panel_maternal(ax):
     ax.yaxis.set_major_locator(MultipleLocator(5))
     ax.grid(axis="y", which="major", color="0.9", lw=0.7)
     ax.set_axisbelow(True)
-    opaque_legend(ax, loc="lower right", fontsize=10.5, handletextpad=0.4,
+    opaque_legend(ax, loc="lower right", fontsize=12, handletextpad=0.4,
                   bbox_to_anchor=(1.0, 0.16))
     return r2m, r2d
 

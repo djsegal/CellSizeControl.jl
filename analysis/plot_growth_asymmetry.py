@@ -84,7 +84,7 @@ def panel_timecourse(ax):
     ax.set_title("(a) Lineage growth over the replicative lifespan", fontsize=11)
     ax.set_xlim(0, max(t))
     ax.set_ylim(0, max(vt) * 1.12)
-    ax.legend(loc="upper left", frameon=False, fontsize=9)
+    ax.legend(loc="upper left", frameon=False, fontsize=12)
 
 
 def panel_maternal(ax):

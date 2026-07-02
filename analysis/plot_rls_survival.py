@@ -40,7 +40,7 @@ def main():
     ax.set(xlabel="Replicative age (divisions)", ylabel="Surviving fraction $S(a)$",
            title="Emergent replicative-lifespan survival curve",
            xlim=(0, age.max()), ylim=(0, 1.02))
-    ax.legend(loc="upper right", frameon=False, fontsize=10)
+    ax.legend(loc="upper right", frameon=False, fontsize=12)
 
     fig.tight_layout()
     out = HERE / "rls_survival.png"

@@ -60,9 +60,9 @@ def main():
            title="Gompertz-like mortality with late-life deceleration")
     ax.annotate(f"Aging-phase doubling\ntime $\\approx$ {mrdt:.1f} divisions\n"
                 "(+ young ramp, late plateau)",
-                xy=(0.04, 0.96), xycoords="axes fraction", ha="left", va="top", fontsize=9,
+                xy=(0.04, 0.96), xycoords="axes fraction", ha="left", va="top", fontsize=12,
                 bbox=dict(boxstyle="round", fc="white", ec="0.8", alpha=0.9))
-    ax.legend(loc="lower right", frameon=False, fontsize=9.5)
+    ax.legend(loc="lower right", frameon=False, fontsize=12)
 
     fig.tight_layout()
     out = HERE / "rls_hazard.png"

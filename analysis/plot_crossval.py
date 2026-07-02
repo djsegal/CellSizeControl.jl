@@ -42,7 +42,7 @@ def main() -> None:
     for yi, (zi, a) in enumerate(zip(z, annot)):
         ax.text(2.55, yi, a, va="center", fontsize=8.5, color="0.25")
     ax.set_yticks(list(y))
-    ax.set_yticklabels(labels, fontsize=10)
+    ax.set_yticklabels(labels, fontsize=12)
     ax.set_xlim(-2.5, 2.5)
     ax.set_xlabel("Model deviation from the published value (in units of the tolerance band)")
     ax.set_title("Cross-validation: one parameterization reproduces seven benchmarks",

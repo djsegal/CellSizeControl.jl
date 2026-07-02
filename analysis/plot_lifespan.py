@@ -63,7 +63,7 @@ def main():
             title="(a) Emergent RLS distribution vs published target")
     axA.set_xlim(0, np.percentile(rls, 99.5) + 3)
     axA.set_ylim(0, 400)  # headroom so the upper-right legend clears the histogram bars
-    opaque_legend(axA, loc="upper right", fontsize=10.5)
+    opaque_legend(axA, loc="upper right", fontsize=12)
 
     # (b) each cell's damage trajectory accelerates to ITS OWN viability threshold D_crit (a
     # per-cell lognormal draw -- the source of RLS spread). The senescence marker sits where
@@ -94,7 +94,7 @@ def main():
              label=r"Senescence ($D$ crosses $D_{\rm crit}$)")
     axB.set(xlabel="Replicative age (divisions)", ylabel="Mother accumulated damage (a.u.)",
             title="(b) Autocatalytic damage reaches the viability threshold")
-    opaque_legend(axB, loc="lower right", fontsize=10.5)
+    opaque_legend(axB, loc="lower right", fontsize=12)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     issues = pub_audit(fig)

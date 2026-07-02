@@ -65,7 +65,7 @@ def main() -> None:
     axB.set(xlabel="Replicative lifespan (divisions)", ylabel="Probability density",
             title="(b) Posterior-predictive matches the data", xlim=(0, 60),
             ylim=(0, ytop))
-    opaque_legend(axB, loc="upper right", fontsize=10.5)
+    opaque_legend(axB, loc="upper right", fontsize=12)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     issues = pub_audit(fig)

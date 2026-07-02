@@ -71,9 +71,9 @@ def apply_style() -> None:
         {
             "font.family": "sans-serif",
             "font.sans-serif": ["DejaVu Sans"],
-            "font.size": 12,
-            "axes.titlesize": 13,
-            "axes.labelsize": 12,
+            "font.size": 13,
+            "axes.titlesize": 14,
+            "axes.labelsize": 13,
             "axes.labelpad": 6.0,  # a touch more gap between axis labels and the tick numbers
             "axes.spines.top": False,
             "axes.spines.right": False,
@@ -83,14 +83,14 @@ def apply_style() -> None:
             "ytick.direction": "out",
             "xtick.major.width": 0.8,
             "ytick.major.width": 0.8,
-            "xtick.labelsize": 11,
-            "ytick.labelsize": 11,
+            "xtick.labelsize": 12,
+            "ytick.labelsize": 12,
             # opaque, legible legends by default (occlusion guard)
             "legend.frameon": True,
             "legend.framealpha": 0.93,
             "legend.facecolor": "white",
             "legend.edgecolor": "0.8",
-            "legend.fontsize": 11,
+            "legend.fontsize": 12,
             "legend.markerscale": 1.6,
             "figure.dpi": 150,
             "savefig.dpi": 300,
@@ -146,7 +146,7 @@ def clean_hexbin(ax, x, y, **kwargs):
     return ax.hexbin(x, y, **kwargs)
 
 
-def pub_audit(fig, *, min_font=8.0, occlude_frac=0.12):
+def pub_audit(fig, *, min_font=10.0, occlude_frac=0.12):
     """matplotlib analog of PubPlots ``publication_audit`` -- return the list of
     violations (empty == clean): in-plot text or legend occluding data, sub-floor
     fonts, and non-CB-safe colormaps. Call after the figure is fully built."""

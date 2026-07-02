@@ -61,7 +61,7 @@ def main() -> None:
     cb.set_label(r"$\log_{10}(V_{\rm end}/V_0)$  (runaway $\to$)", fontsize=11)
     # sizer/adder/timer bin edges as slope contours; labels haloed so the field can't cut them
     cs = axA.contour(A, F, SL, levels=[0.5, 1.5], colors="k", linewidths=1.1, linestyles="-")
-    lbls = axA.clabel(cs, fmt={0.5: "sizer | adder", 1.5: "adder | timer"}, fontsize=10)
+    lbls = axA.clabel(cs, fmt={0.5: "sizer | adder", 1.5: "adder | timer"}, fontsize=12)
     halo(lbls)
     # analytic homeostasis boundary alpha*f = 1  ->  f = 1/alpha
     aa = np.linspace(1 / F.max(), A.max(), 200)
@@ -70,7 +70,7 @@ def main() -> None:
             ylabel=r"Division asymmetry $f$ (daughter fraction)",
             title="(a) Homeostatic vs runaway lineages", xlim=(A.min(), A.max()),
             ylim=(F.min(), F.max()))
-    opaque_legend(axA, loc="lower left", fontsize=10.5)
+    opaque_legend(axA, loc="lower left", fontsize=12)
 
     # (b) misclassification over (alpha, cv)
     A2, CV, MC = load_grid("phase_misclass.csv", "misclass")
@@ -86,7 +86,7 @@ def main() -> None:
             ylim=(CV.min(), CV.max()))
     # white text on the dark (low-misclass) viridis region, haloed dark so it survives lighter cells
     axB.text(0.04, 0.30, "n=80 cells, 300 replicates\nhard: strong sizers + bin edges",
-             transform=axB.transAxes, fontsize=10, color="0.15", va="top", linespacing=1.3,
+             transform=axB.transAxes, fontsize=12, color="0.15", va="top", linespacing=1.3,
              bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.6", alpha=0.92))
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))

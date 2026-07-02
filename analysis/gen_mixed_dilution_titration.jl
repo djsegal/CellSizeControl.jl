@@ -30,3 +30,12 @@ rho_h = (2 - 1.40) / (1.40 - 1)
 @printf("\nDirection captured: baseline makes the response sub-proportional (fold<2) and the larger\n")
 @printf("diploid baseline lowers the fold further, matching haploid>diploid. One extra parameter (rho),\n")
 @printf("closed-form. (Precise two-fold values are not jointly fit: only %d digitized points exist.)\n", 4)
+
+# emit the mixed-model folds for the Fig 3 overlay (reproducible; read by plot_whi5_dosage_test.py)
+here = @__DIR__
+open(joinpath(here, "whi5_dosage_mixed.csv"), "w") do io
+    println(io, "series,ploidy,fold,rho")
+    @printf(io, "mixed,1,%.4f,%.4f\n", fold(rho_h, 1), rho_h)
+    @printf(io, "mixed,2,%.4f,%.4f\n", fold(rho_h, 2), rho_h)
+end
+println("wrote whi5_dosage_mixed.csv")

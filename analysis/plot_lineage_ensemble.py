@@ -47,14 +47,14 @@ def main():
                 label=f"Mean {summ['daughter_size_mean']:.1f} fL  (CV {summ['daughter_size_cv']:.2f})")
     axA.set(xlabel="Daughter birth volume (fL)", ylabel="Daughters (subsample)",
             title="(a) Daughter birth-size distribution")
-    axA.legend(loc="upper left", frameon=False, fontsize=9)
+    axA.legend(loc="upper left", frameon=False, fontsize=12)
 
     axB.hist(dmg, bins=50, color=GREEN, alpha=0.85, edgecolor="white", linewidth=0.3)
     axB.axvline(summ["daughter_damage_mean"], color=VERM, lw=2.0,
                 label=f"Mean {summ['daughter_damage_mean']:.2f}  (CV {summ['daughter_damage_cv']:.2f})")
     axB.set(xlabel="Inherited damage (a.u.)", ylabel="Daughters (subsample)",
             title="(b) Inherited-damage distribution")
-    axB.legend(loc="upper right", frameon=False, fontsize=9)
+    axB.legend(loc="upper right", frameon=False, fontsize=12)
 
     axC.scatter(vm, vd, s=5, color=BLUE, alpha=0.35, edgecolor="none")
     axC.set(xlabel="Mother volume at division (fL)", ylabel="Daughter birth volume (fL)",

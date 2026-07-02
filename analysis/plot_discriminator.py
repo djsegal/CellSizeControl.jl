@@ -64,9 +64,9 @@ def main():
             ylabel=r"Division volume $V_d$ (normalized)",
             title="(a) The size-control slope discriminator")
     axA.set_ylim(bottom=0)  # honest baseline + opens room under the lower-right legend
-    leg = opaque_legend(axA, loc="lower right", markerscale=2.6, fontsize=10.5,
+    leg = opaque_legend(axA, loc="lower right", markerscale=2.6, fontsize=12,
                         title="Soifer-Amir 2016 regimes\n(dashed = published target)",
-                        title_fontsize=10.5)
+                        title_fontsize=12)
     leg._legend_box.align = "left"
 
     # Dual y-axis: the sizer holds near 20 fL while the sub-doubling timer collapses toward 0; on a

@@ -84,10 +84,10 @@ def main():
     ylo = cmin - 0.06
     halo(axA.text(d_step * 0.62 + 5.0, ylo + 0.018,
                   f"+ 19 min CLN2 timer\n~{d_step + T_CLN2:.0f} min total G1",
-                  color=col["daughter"], fontsize=10.5, ha="center", va="bottom"))
+                  color=col["daughter"], fontsize=12, ha="center", va="bottom"))
     halo(axA.text(d_step * 0.22 - 0.33, ylo + 0.018,
                   f"+ 19 min CLN2 timer\n~{m_step + T_CLN2:.0f} min G1 (timer only)",
-                  color=col["mother"], fontsize=10.5, ha="center", va="bottom"))
+                  color=col["mother"], fontsize=12, ha="center", va="bottom"))
 
     # Same logic in volume: the daughter grows from her small birth size up to V* (blue curve);
     # the mother is born past V* and fires at once (green marker, no curve).

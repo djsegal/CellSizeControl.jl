@@ -72,7 +72,7 @@ def main():
     axB.text(max(gen) * 0.5, 135,
              "Cycle lengthens with age (Egilmez &\n"
              f"Jazwinski 1989, ~5-6×; G1-specific,\nMoreno 2019). Model: {fold:.1f}×",
-             color="0.20", fontsize=10, ha="left", va="center", linespacing=1.35,
+             color="0.20", fontsize=12, ha="left", va="center", linespacing=1.35,
              bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor="0.6", alpha=0.95))
     opaque_legend(axB, loc="upper left", fontsize=11)
 

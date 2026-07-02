@@ -91,8 +91,8 @@ def main():
     # shade the two bucket ranges faintly so the reader sees the averaging windows
     axA.axvspan(f70[0], f70[1], color=VERM, alpha=0.05, lw=0)
     axA.axvspan(l10[0], l10[1], color=VERM, alpha=0.10, lw=0)
-    halo(axA.text(0.35, 28.0, "first 70%", color=VERM, fontsize=10, ha="center", va="bottom"))
-    halo(axA.text(0.95, 9.6, "last 10%", color=VERM, fontsize=10, ha="center", va="bottom"))
+    halo(axA.text(0.35, 28.0, "first 70%", color=VERM, fontsize=12, ha="center", va="bottom"))
+    halo(axA.text(0.95, 9.6, "last 10%", color=VERM, fontsize=12, ha="center", va="bottom"))
     axA.set(xlabel="Maternal replicative age (fraction of mother's lifespan)",
             ylabel="Daughter replicative lifespan (divisions)",
             title="(a) Daughter lifespan declines with maternal age")
@@ -100,7 +100,7 @@ def main():
     axA.set_ylim(0, 33)
     axA.grid(axis="y", which="major", color="0.9", lw=0.7)
     axA.set_axisbelow(True)
-    opaque_legend(axA, loc="lower left", fontsize=9.5)
+    opaque_legend(axA, loc="lower left", fontsize=12)
 
     # ---- Panel (b): the headline number -- the old-mother deficit FOLD, model vs data -------
     x = np.arange(2)
@@ -115,13 +115,13 @@ def main():
     bK = axB.bar(x + w / 2, ken_vals, w, color=VERM, label="Kennedy 1994", edgecolor="white")
     for i, r in enumerate(bM):     # label above the upper credible-interval cap
         halo(axB.text(r.get_x() + r.get_width() / 2, r.get_height() + err_hi[i] + 0.5,
-                      f"{r.get_height():.1f}", ha="center", va="bottom", fontsize=9.5))
+                      f"{r.get_height():.1f}", ha="center", va="bottom", fontsize=12))
     for r in bK:
         halo(axB.text(r.get_x() + r.get_width() / 2, r.get_height() + 0.5,
-                      f"{r.get_height():.1f}", ha="center", va="bottom", fontsize=9.5))
+                      f"{r.get_height():.1f}", ha="center", va="bottom", fontsize=12))
     axB.set_xticks(x)
     axB.set_xticklabels(["daughters of\nyoung mothers\n(first 70%)",
-                         "daughters of\nold mothers\n(last 10%)"], fontsize=9.5)
+                         "daughters of\nold mothers\n(last 10%)"], fontsize=12)
     axB.set_ylabel("Daughter replicative lifespan (divisions)")
     axB.set_title("(b) The rejuvenation deficit", fontsize=13)
     axB.set_ylim(0, 33)
@@ -132,9 +132,16 @@ def main():
     axB.text(1.0, 16.0,
              f"fold-drop\nmodel {model_fold:.1f}× ({fold_ci[1]:.1f}–{fold_ci[2]:.1f})"
              f"\nvs data {ken_fold:.1f}×",
-             ha="center", va="center", fontsize=10.5, fontweight="bold", linespacing=1.4,
+             ha="center", va="center", fontsize=12, fontweight="bold", linespacing=1.4,
              bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor="0.6", alpha=0.95))
-    opaque_legend(axB, loc="upper right", fontsize=9.5)
+    # make the absolute offset explicit: the held-out claim is the fold, not the absolute level
+    # (model young/old run ~1/3 below Kennedy while the fold matches).
+    off = 1.0 - model_vals[0] / ken_vals[0]
+    halo(axB.text(-0.02, 32.4,
+                  f"absolute lifespans run ~{off*100:.0f}% low;\n"
+                  "the held-out claim is the fold, not the level",
+                  ha="left", va="top", fontsize=10.5, color="0.30", style="italic"))
+    opaque_legend(axB, loc="upper right", fontsize=11)
 
     fig.tight_layout(rect=(0, 0, 1, 0.94))
     issues = pub_audit(fig)

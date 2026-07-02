@@ -491,6 +491,70 @@ using Statistics: mean, std
         @test isapprox(sk, law.skew; rtol=0.03)              # skew within 3%
     end
 
+    # ---- CC-X: extant-vs-newborn size divergence + the senescence age-law correction ----
+    # A snapshot of a balanced exponentially-growing culture samples every cell at its last
+    # division: age-0 cells are the small buds (the newborn law), age a≥1 cells are mothers
+    # carrying their full retained body V*·enlarge(a−1). Weighting by the geometric age law
+    # 2^{-(a+1)} makes the MEAN EXTANT cell far larger than the mean newborn — divergence
+    # D≈1.97, scale-free (V*-independent), and (1+α0)/(2α0)=2.0625 in the no-erosion limit.
+    # And the geometric law itself carries a senescence correction: at a finite lifespan the
+    # dividing population's age law is the truncated geometric λ^{-(a+1)}, λ<2 solving the
+    # discrete Euler–Lotka λ=Σ_{a=0}^{rls−1}λ^{-a}; λ→2 recovers 2^{-(a+1)}, rls=2 gives φ.
+    @testset "CC-X — extant/newborn divergence + senescence age law" begin
+        # (1) HEADLINE: the extant/newborn size divergence (calibrated params) is locked.
+        law = extant_size_law(;
+            alpha0=0.32, alpha_max=0.5, tau=8.0, enlarge_max=0.45, enlarge_tau=8.0, Vstar=60.0
+        )
+        @test isapprox(law.divergence, 1.9692; atol=5e-4)    # mean extant ≈ 1.97× mean newborn
+        @test law.extant_mean > law.newborn_mean             # extant strictly exceeds newborn
+
+        # (2) SCALE-FREE: divergence is identical at any set-point V* (sizes just rescale).
+        for V in (30.0, 137.0, 240.0)
+            l = extant_size_law(;
+                alpha0=0.32, alpha_max=0.5, tau=8.0, enlarge_max=0.45, enlarge_tau=8.0, Vstar=V
+            )
+            @test isapprox(l.divergence, law.divergence; atol=1e-9)
+            @test isapprox(l.extant_mean, law.extant_mean * V / 60.0; rtol=1e-9)
+        end
+
+        # (3) NO-EROSION analytic limit: D = (1+α0)/(2α0) exactly (2.0625 at α0=0.32).
+        flat = extant_size_law(; alpha0=0.32, alpha_max=0.32, enlarge_max=0.0)
+        @test isapprox(flat.divergence, (1 + 0.32) / (2 * 0.32); atol=1e-12)
+
+        # (4) MECHANISM gate: a Monte-Carlo population reproduces the analytic divergence — the
+        #     closed form really is mean(extant)/mean(newborn) of the balanced-growth culture.
+        pop = simulate_population(
+            SizerRule(60.0); target=200_000, enlarge_max=0.45, enlarge_tau=8.0,
+            alpha0=0.32, alpha_max=0.5, tau=8.0, cv=0.0, crit_cv=0.0, seed=1,
+        )
+        D_mc = mean(pop.Vbirth) / mean(pop.Vbirth[pop.age .== 0])
+        @test isapprox(D_mc, law.divergence; rtol=0.005)     # within 0.5% of the prediction
+
+        # (5) SENESCENCE correction: Euler–Lotka λ, exact anchors + the → 2 limit.
+        @test isapprox(senescence_age_law(2).lambda, (1 + sqrt(5)) / 2; atol=1e-10)  # rls=2 ⇒ φ
+        @test isapprox(senescence_age_law(4).lambda, 1.9275619755; atol=1e-6)
+        @test isapprox(senescence_age_law(100).lambda, 2.0; atol=1e-6)               # long rls → 2
+        sl = senescence_age_law(6)
+        @test isapprox(sum(sl.p), 1.0; atol=1e-12)           # a normalized distribution
+        @test isapprox(sl.p[1], 1 / sl.lambda; atol=1e-12)   # virgin fraction is exactly 1/λ
+        @test sl.p[1] > 0.5                                  # short rls: virgins over 1/2
+
+        # (6) MECHANISM gate: a short-lifespan population's dividing-age law matches λ^{-(a+1)}.
+        rls_det = replicative_lifespan(; D_crit=5.35, cv=0.0, crit_cv=0.0)   # deterministic rls
+        sp = simulate_population(
+            SizerRule(60.0); target=300_000, D_crit=5.35, cv=0.0, crit_cv=0.0,
+            max_gen=400, seed=1,
+        )
+        law_s = senescence_age_law(rls_det)
+        divmask = sp.age .< sp.rls
+        Nd = count(divmask)
+        for a in 0:(rls_det - 1)
+            emp = count(i -> divmask[i] && sp.age[i] == a, eachindex(sp.age)) / Nd
+            @test isapprox(emp, law_s.p[a + 1]; atol=3e-3)   # Euler–Lotka law, not naive 2^{-(a+1)}
+        end
+        @test law_s.lambda < 2.0                             # short rls: growth factor below 2
+    end
+
     # ---- lineage timecourse: the mother is monotonic (never shrinks) over the lifespan ----
     @testset "lineage_timecourse — monotonic mother, buds detach" begin
         tc = lineage_timecourse(; n_max=29)

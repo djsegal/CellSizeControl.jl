@@ -1,0 +1,13 @@
+case,Vstar,source,newborn_mean,extant_mean,divergence
+calibrated,60.0,analytic,21.3858,42.1124,1.96918
+calibrated,60.0,simulation,21.3858,42.1124,1.96918
+scalefree,30.0,analytic,10.6929,21.0562,1.96918
+scalefree,30.0,simulation,10.6929,21.0562,1.96918
+scalefree,120.0,analytic,42.7716,84.2248,1.96918
+scalefree,120.0,simulation,42.7716,84.2248,1.96918
+scalefree,240.0,analytic,85.5432,168.4496,1.96918
+scalefree,240.0,simulation,85.5432,168.4496,1.96918
+full,60.0,analytic,21.3858,42.1124,1.96918
+erosion_only,60.0,analytic,20.3356,40.1678,1.97525
+enlarge_only,60.0,analytic,20.1085,41.4737,2.0625
+no_erosion_analytic,60.0,analytic,19.2,39.6,2.0625

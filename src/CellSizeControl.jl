@@ -38,6 +38,8 @@ export SizeControlRule,
     lifespan_distribution,
     simulate_population,
     newborn_size_law,
+    extant_size_law,
+    senescence_age_law,
     qss_growth_rate,
     exponential_growth_rate,
     grow_to,
@@ -783,6 +785,121 @@ function newborn_size_law(;
     skew = cv > 1e-9 ? sum(ws .* (ss .- mean_s) .^ 3) / sd^3 : 0.0
     ratio = alpha0 > 0 ? mean_s / (alpha0 * Vstar) : NaN
     return (; mean=mean_s, sd, cv, skew, ratio)
+end
+
+"""
+    extant_size_law(; alpha0=0.32, alpha_max=0.5, tau=10.0, enlarge_max=0.0,
+                    enlarge_tau=8.0, Vstar=1.0, max_age=80)
+        -> (; newborn_mean, extant_mean, divergence)
+
+Closed-form mean size of an **extant** (whole-population, snapshot) cell versus a **newborn**
+(virgin daughter) in a balanced exponentially-growing culture, and their ratio `divergence`.
+
+A snapshot of the culture samples every cell at its most-recent division: the age-0 cells are the
+buds just shed (the [`newborn_size_law`](@ref) distribution, mean `newborn_mean`), while a cell of
+replicative age `a ≥ 1` is a mother carrying her full retained body `V*·enlarge(a−1)` (monotonic —
+the mother keeps her body, only the bud leaves). Weighting each age class by the geometric
+replicative-age law `P(age=a) = 2^{-(a+1)}` gives
+
+`extant_mean = ½·newborn_mean + Σ_{a≥1} 2^{-(a+1)}·V*·enlarge(a−1)`.
+
+The **divergence** `extant_mean / newborn_mean` is the size-structure signature of exponential
+balanced growth: the mean cell in the culture is far larger than the mean newborn because the
+standing population over-represents the larger, older mother bodies relative to the small buds they
+shed. Like the newborn law it is **scale-free** — independent of the set-point `V*` — and, in the
+no-erosion, no-enlargement limit (`alpha_max = alpha0`, `enlarge_max = 0`), it reduces to the exact
+closed form `(1 + alpha0) / (2·alpha0)` (2.0625 at `alpha0 = 0.32`). It is the analytic counterpart
+of `mean(pop.Vbirth) / mean(pop.Vbirth[pop.age .== 0])` from [`simulate_population`](@ref).
+
+```jldoctest
+julia> law = extant_size_law(; tau=8.0, enlarge_max=0.45, enlarge_tau=8.0, Vstar=60.0);
+
+julia> round(law.divergence, digits=4)     # mean extant cell ≈ 1.97× the mean newborn
+1.9692
+
+julia> round(extant_size_law(; tau=8.0, enlarge_max=0.45, Vstar=137.0).divergence, digits=4)
+1.9692
+
+julia> round(extant_size_law(; alpha0=0.32, alpha_max=0.32, enlarge_max=0.0).divergence, digits=4)
+2.0625
+```
+"""
+function extant_size_law(;
+    alpha0::Real=0.32,
+    alpha_max::Real=0.5,
+    tau::Real=10.0,
+    enlarge_max::Real=0.0,
+    enlarge_tau::Real=8.0,
+    Vstar::Real=1.0,
+    max_age::Int=80,
+)
+    ws = [2.0^(-(a + 1)) for a in 0:max_age]
+    ws ./= sum(ws)                                    # renormalize the truncated geometric law
+    enlarge(a) = 1 + enlarge_max * (1 - exp(-a / enlarge_tau))
+    # newborn mean: the geometric-mixture prediction (mirror of newborn_size_law)
+    newborn_mean =
+        Vstar * sum(
+            ws[a + 1] *
+            aging_daughter_fraction(a; alpha0=alpha0, alpha_max=alpha_max, tau=tau) *
+            enlarge(a) for a in 0:max_age
+        )
+    # extant snapshot: age-0 → newborn distribution; age a≥1 → retained body V*·enlarge(a−1)
+    extant_mean =
+        ws[1] * newborn_mean +
+        Vstar * sum(ws[a + 1] * enlarge(a - 1) for a in 1:max_age)
+    divergence = newborn_mean > 0 ? extant_mean / newborn_mean : NaN
+    return (; newborn_mean, extant_mean, divergence)
+end
+
+"""
+    senescence_age_law(rls::Integer) -> (; lambda, ages, p)
+
+Senescence correction to the geometric replicative-age law at short mean replicative lifespan.
+
+The clean law `P(age=a) = 2^{-(a+1)}` assumes cells divide forever. With a finite lifespan `rls`
+(cells divide at ages `0 … rls−1` then arrest), the dividing population grows by a factor `λ < 2`
+per generation set by the discrete Euler–Lotka equation `λ = Σ_{a=0}^{rls−1} λ^{-a}`, and its
+replicative-age distribution is the **truncated geometric** `P(age=a) = λ^{-(a+1)}` for
+`a = 0 … rls−1` (using `Σ_{a} λ^{-a} = λ`, so the virgin fraction is exactly `1/λ`). As
+`rls → ∞`, `λ → 2` and the law recovers `2^{-(a+1)}`; at short `rls` the base `1/λ > 1/2` flattens
+the distribution and it truncates at `rls−1`. The one-division-shy limit `rls = 2` gives the golden
+ratio, `λ = φ = (1+√5)/2`. This is the deterministic-lifespan analytic counterpart of the age
+histogram from [`simulate_population`](@ref) run at a short lifespan.
+
+`ages` is `0:rls-1` and `p[a+1] = λ^{-(a+1)}` (the normalized dividing-cell age distribution).
+
+```jldoctest
+julia> round(senescence_age_law(2).lambda, digits=6)     # rls=2 ⇒ golden ratio φ
+1.618034
+
+julia> round(senescence_age_law(4).lambda, digits=5)
+1.92756
+
+julia> isapprox(senescence_age_law(100).lambda, 2.0; atol=1e-6)   # long rls recovers 2^{-(a+1)}
+true
+
+julia> round.(senescence_age_law(4).p, digits=4)         # truncated geometric, sums to 1
+4-element Vector{Float64}:
+ 0.5188
+ 0.2691
+ 0.1396
+ 0.0724
+```
+"""
+function senescence_age_law(rls::Integer)
+    rls >= 1 || throw(ArgumentError("rls must be ≥ 1"))
+    # Newton solve of λ = Σ_{a=0}^{rls−1} λ^{-a}
+    lam = 2.0
+    for _ in 1:500
+        f = lam - sum(lam^(-a) for a in 0:(rls - 1))
+        df = 1 + sum(a * lam^(-a - 1) for a in 0:(rls - 1))
+        step = f / df
+        lam -= step
+        abs(step) < 1e-15 && break
+    end
+    ages = collect(0:(rls - 1))
+    p = [lam^(-(a + 1)) for a in ages]
+    return (; lambda=lam, ages, p)
 end
 
 # ---------------------------------------------------------------------------

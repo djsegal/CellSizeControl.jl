@@ -76,6 +76,14 @@ lifespan_distribution
 simulate_population
 ```
 
+## Population size-structure laws
+
+```@docs
+newborn_size_law
+extant_size_law
+senescence_age_law
+```
+
 ## Single-cell growth and the cell cycle
 
 ```@docs

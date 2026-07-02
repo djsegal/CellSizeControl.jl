@@ -124,7 +124,7 @@ def main():
                          "daughters of\nold mothers\n(last 10%)"], fontsize=12)
     axB.set_ylabel("Daughter replicative lifespan (divisions)")
     axB.set_title("(b) The rejuvenation deficit", fontsize=13)
-    axB.set_ylim(0, 35)
+    axB.set_ylim(0, 40)
     axB.grid(axis="y", which="major", color="0.9", lw=0.7)
     axB.set_axisbelow(True)
     # Centered over the old-mother bar pair (data x=1.0, the divider between its blue/orange bars),

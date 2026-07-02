@@ -53,7 +53,7 @@ def main():
         s = np.polyfit(vb, vd, 1)[0]
         axA.scatter(vb, vd, s=20, color=COL[rule], marker=MRK[rule], alpha=0.45,
                     edgecolors="none", zorder=2,
-                    label=f"{rule}  (model slope {s:.2f}, target {SOIFER[rule]:.0f})")
+                    label=f"{rule}  (slope {s:.2f}, target {SOIFER[rule]:.0f})")
         # reference target line: slope = Soifer-Amir value, anchored at the cloud centroid
         ref = SOIFER[rule]
         xc, yc = vb.mean(), vd.mean()
@@ -64,10 +64,10 @@ def main():
             ylabel=r"Division volume $V_d$ (normalized)",
             title="(a) The size-control slope discriminator")
     axA.set_ylim(bottom=0)  # honest baseline + opens room under the lower-right legend
-    axA.set_xlim(right=1.4)  # cap the birth-volume axis
-    leg = opaque_legend(axA, loc="lower right", markerscale=2.6, fontsize=12,
-                        title="Soifer-Amir 2016 regimes\n(dashed = published target)",
-                        title_fontsize=12)
+    axA.set_xlim(0, 1.75)  # widen so the lower-right legend clears the points
+    leg = opaque_legend(axA, loc="lower right", markerscale=1.7, fontsize=9.5,
+                        title="Soifer-Amir 2016\n(dashed = target)",
+                        title_fontsize=9.5)
     leg._legend_box.align = "left"
 
     # Dual y-axis: the sizer holds near 20 fL while the sub-doubling timer collapses toward 0; on a
@@ -80,7 +80,7 @@ def main():
     axB.tick_params(axis="y", labelcolor=BLUE)
     axB.set_ylim(bottom=0)
     axB.set_title("(b) The sizer stabilizes what the timer collapses")
-    axB.set_xlim(min(gen), max(gen))
+    axB.set_xlim(0, 20)  # the timer has collapsed by ~gen 20; drop the flat tail out to 40
     axBt = axB.twinx()
     axBt.spines["top"].set_visible(False)
     lT, = axBt.plot(gen, tvb, "-", lw=2.4, color=VERM, marker="s", ms=5, markevery=4,

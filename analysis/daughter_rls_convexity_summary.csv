@@ -1,0 +1,11 @@
+quantity,value
+young_rls,24.9796
+old_rls,4.4899
+fold,5.5636
+convex_below_chord,1
+peak_sag_divisions,1.8621
+peak_sag_frac,0.5750
+quad_x2_coeff,7.1473
+rms_linear,0.5936
+rms_quadratic,0.2684
+steepest_decline_frac,0.3000

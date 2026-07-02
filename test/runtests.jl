@@ -260,6 +260,75 @@ using Statistics: mean, std
         @test length(lifespan_distribution(50)) == 50
     end
 
+    # ---- AGE-3: daughter RLS vs maternal age — the CONVEX shape prediction ----
+    # One age-eroding asymmetry ties the size face to the fitness face: a daughter born to an
+    # age-`a` mother inherits a share φ(a) of the mother's accumulated damage D_m(a) and so
+    # begins partway up her own autocatalytic damage trajectory. This is an out-of-sample
+    # prediction (the McCormick mother-RLS calibration + the size-face asymmetry, nothing refit)
+    # against Kennedy 1994. The population curve (averaged over lifespan + threshold
+    # heterogeneity — what a microfluidic RLS study actually measures) is monotone-decreasing
+    # AND convex: the decline is steepest at young/mid maternal age and flattens toward old age,
+    # because daughter RLS is a concave (≈ logarithmic) function of inherited damage, so it is
+    # most sensitive to D_m at low damage. This is a sharper, falsifiable shape claim than the
+    # two-bucket Kennedy fold.
+    @testset "daughter RLS vs maternal age — convex shape (AGE-3)" begin
+        # inherited damage seed shortens life, deterministically (the D0 primitive)
+        @test replicative_lifespan(; D0=20.0, cv=0.0, crit_cv=0.0) <
+            replicative_lifespan(; cv=0.0, crit_cv=0.0)
+        # damage_trajectory contract: one entry per division, monotone, born pristine
+        tr = damage_trajectory(; cv=0.0, crit_cv=0.0)
+        @test length(tr) == replicative_lifespan(; cv=0.0, crit_cv=0.0)
+        @test tr[1] == 0.0 && issorted(tr)
+
+        # passive volume-proportional inheritance share φ(a) = α(a)/α_max, α the size-face
+        # asymmetry fixed by the daughter-size increase (Johnston 1966 / Yang 2011).
+        φ(a) = aging_daughter_fraction(a; alpha0=0.69, alpha_max=0.90, tau=14.0) / 0.90
+
+        # build the population fraction-binned daughter-RLS curve from the package model
+        N, nbin, dseed = 4000, 10, 1_000_000
+        binsum = zeros(nbin); binN = zeros(Int, nbin)
+        for m in 1:N
+            traj = damage_trajectory(; seed=m)              # a fresh mother: her D_m(a) series
+            L = length(traj); L < 2 && continue
+            for a in 0:(L - 1)
+                Ld = replicative_lifespan(; D0=φ(a) * traj[a + 1], seed=(dseed += 1))
+                b = clamp(floor(Int, (a / (L - 1)) * nbin) + 1, 1, nbin)
+                binsum[b] += Ld; binN[b] += 1
+            end
+        end
+        @test all(>(0), binN)
+        x = [(b - 0.5) / nbin for b in 1:nbin]
+        y = binsum ./ binN
+
+        # (1) monotone decreasing in maternal age
+        @test all(<(0), diff(y))
+        # (2) substantial deficit young → old (young daughters near the full ≈25-div lifespan;
+        #     old-mother daughters strongly shortened)
+        @test y[1] > 20.0 && y[end] < 10.0
+        # (3) CONVEX: the curve lies below the straight chord joining its endpoints, with a real
+        #     margin (a linear decline would sit ON the chord). Decelerating decline.
+        chord = y[1] .+ (y[end] - y[1]) .* (x .- x[1]) ./ (x[end] - x[1])
+        @test all(y .<= chord .+ 1e-9)
+        @test minimum(y .- chord) < -0.5           # observed margin ≈ -1.6; robust across seeds
+        # (4) positive quadratic curvature (least-squares aᵢx²+bx+c ⇒ a>0 for convex)
+        A = hcat(x .^ 2, x, ones(length(x)))
+        a2 = (A \ y)[1]
+        @test a2 > 1.0                             # observed ≈ 7
+
+        # mechanism check: the convexity is an EMERGENT POPULATION effect. A single noiseless
+        # mother's daughter curve is essentially LINEAR (a near-constant ≈ −1 div/gen decline),
+        # NOT convex — it stays close to its own endpoint chord. Averaging over the lifespan +
+        # threshold heterogeneity is what bends the population shape convex.
+        det_traj = damage_trajectory(; cv=0.0, crit_cv=0.0)
+        Ldet = length(det_traj)
+        yd = Float64[replicative_lifespan(; D0=φ(a) * det_traj[a + 1], cv=0.0, crit_cv=0.0)
+                     for a in 0:(Ldet - 1)]
+        xd = collect(0:(Ldet - 1))
+        chord_d = yd[1] .+ (yd[end] - yd[1]) .* (xd .- xd[1]) ./ (xd[end] - xd[1])
+        @test all(<=(0), diff(yd))                 # single mother: monotone non-increasing
+        @test minimum(yd .- chord_d) > -0.5        # …and ≈ linear (hugs its chord), unlike (3)
+    end
+
     # ---- lineage timecourse: the mother is monotonic (never shrinks) over the lifespan ----
     @testset "lineage_timecourse — monotonic mother, buds detach" begin
         tc = lineage_timecourse(; n_max=29)

@@ -34,6 +34,7 @@ export SizeControlRule,
     aging_daughter_fraction,
     simulate_aging_lineage,
     replicative_lifespan,
+    damage_trajectory,
     lifespan_distribution,
     qss_growth_rate,
     exponential_growth_rate,
@@ -429,7 +430,7 @@ end
 """
     replicative_lifespan(; D_crit=38.0, crit_cv=0.45, production=1.0, kappa=0.03, cv=0.05,
                          alpha0=0.32, alpha_max=0.5, tau=10.0, segregate=false,
-                         seed=1, max_gen=500) -> Int
+                         D0=0.0, seed=1, max_gen=500) -> Int
 
 The replicative lifespan (number of divisions before senescence) emerging from accumulating
 damage rather than being imposed. The default model (the one the paper uses) is
@@ -454,6 +455,20 @@ the autocatalytic blow-up synchronizes the threshold crossing, so per-division n
 an unrealistically tight distribution. With the default parameters the mean and spread calibrate
 to the measured budding-yeast RLS (mean ≈ 25 divisions, CV ≈ 0.3; Schnitzer 2022) — the
 threshold/heterogeneity are illustrative, chosen to reproduce that target, not fit per-cell.
+
+The keyword `D0` seeds the cell with **inherited damage at birth** (default `0.0`, a pristine
+founder). A daughter that inherits `D0>0` from an aged mother begins partway up the autocatalytic
+damage trajectory and senesces sooner — combined with [`damage_trajectory`](@ref) this is the
+basis for the convex daughter-RLS-vs-maternal-age prediction.
+
+# Examples
+```jldoctest
+julia> replicative_lifespan(; cv=0.0, crit_cv=0.0)
+26
+
+julia> replicative_lifespan(; D0=20.0, cv=0.0, crit_cv=0.0) < replicative_lifespan(; cv=0.0, crit_cv=0.0)
+true
+```
 """
 function replicative_lifespan(;
     D_crit::Real=38.0,
@@ -465,22 +480,93 @@ function replicative_lifespan(;
     alpha_max::Real=0.5,
     tau::Real=10.0,
     segregate::Bool=false,
+    D0::Real=0.0,
     seed::Int=1,
     max_gen::Int=500,
 )
     rng = Random.MersenneTwister(seed)
+    a, _ = _age_to_senescence(rng, D0; D_crit, crit_cv, production, kappa, cv,
+        alpha0, alpha_max, tau, segregate, max_gen, record=false)
+    return a
+end
+
+# Shared core for the autocatalytic-damage aging recursion. Age a cell from birth damage `D0`
+# to senescence; return (rls, trajectory). When `record`, trajectory[a+1] is the damage carried
+# INTO the division that buds the age-`a` daughter (the mother's D_m(a)). Used by both
+# `replicative_lifespan` (rls only) and `damage_trajectory` (the D_m(a) series).
+function _age_to_senescence(
+    rng::Random.AbstractRNG,
+    D0::Real;
+    D_crit::Real,
+    crit_cv::Real,
+    production::Real,
+    kappa::Real,
+    cv::Real,
+    alpha0::Real,
+    alpha_max::Real,
+    tau::Real,
+    segregate::Bool,
+    max_gen::Int,
+    record::Bool,
+)
     # cell-to-cell heterogeneity: this cell's own viability threshold (lognormal, mean D_crit)
     Dc = crit_cv > 0 ? D_crit * exp(crit_cv * randn(rng) - crit_cv^2 / 2) : float(D_crit)
-    D = 0.0
+    traj = Float64[]
+    D = float(D0)
     a = 0
     while D < Dc && a < max_gen
+        record && push!(traj, D)
         frac = aging_daughter_fraction(a; alpha0=alpha0, alpha_max=alpha_max, tau=tau)
         kept = segregate ? (1 - frac) : 1.0     # the share the mother does NOT pass to the bud
         noise = cv > 0 ? (1 + cv * randn(rng)) : 1.0
         D += kept * production * (1 + kappa * D) * max(0.0, noise)   # autocatalytic damage
         a += 1
     end
-    return a
+    return a, traj
+end
+
+"""
+    damage_trajectory(; D0=0.0, seed=1, kwargs...) -> Vector{Float64}
+
+The mother's autocatalytic damage carried into each successive division: element `a+1` is the
+damage present when she buds her age-`a` daughter (her `D_m(a)`). `length` equals her
+[`replicative_lifespan`](@ref) under the same parameters/seed. A daughter of an age-`a` mother
+inherits a share of `damage_trajectory[a+1]` and — via [`replicative_lifespan`](@ref)`(; D0=…)` —
+her own shortened emergent lifespan; iterating over the maternal lifespan yields the (convex)
+daughter-RLS-vs-maternal-age curve. Keyword arguments match [`replicative_lifespan`](@ref).
+
+# Examples
+```jldoctest
+julia> traj = damage_trajectory(; cv=0.0, crit_cv=0.0);
+
+julia> length(traj) == replicative_lifespan(; cv=0.0, crit_cv=0.0)
+true
+
+julia> traj[1] == 0.0            # a fresh mother buds her first daughter carrying no damage
+true
+
+julia> issorted(traj)            # non-conserved damage only accumulates
+true
+```
+"""
+function damage_trajectory(;
+    D_crit::Real=38.0,
+    crit_cv::Real=0.45,
+    production::Real=1.0,
+    kappa::Real=0.03,
+    cv::Real=0.05,
+    alpha0::Real=0.32,
+    alpha_max::Real=0.5,
+    tau::Real=10.0,
+    segregate::Bool=false,
+    D0::Real=0.0,
+    seed::Int=1,
+    max_gen::Int=500,
+)
+    rng = Random.MersenneTwister(seed)
+    _, traj = _age_to_senescence(rng, D0; D_crit, crit_cv, production, kappa, cv,
+        alpha0, alpha_max, tau, segregate, max_gen, record=true)
+    return traj
 end
 
 """

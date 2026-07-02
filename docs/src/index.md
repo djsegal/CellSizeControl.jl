@@ -71,6 +71,7 @@ simulate_lineage
 aging_daughter_fraction
 simulate_aging_lineage
 replicative_lifespan
+damage_trajectory
 lifespan_distribution
 ```
 

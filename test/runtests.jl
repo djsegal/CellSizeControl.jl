@@ -60,16 +60,17 @@ using Statistics: mean, std
         @test hi - lo > 0.5                                             # hysteresis (two stable states)
 
         # (2) the emergent set-point is EXACTLY linear in W (c* is W-independent → a true sizer)
-        @test setpoint_volume(Whi5SBFSwitch(36.0)) / setpoint_volume(Whi5SBFSwitch(18.0)) ≈ 2 atol =
-            1e-2
+        @test setpoint_volume(Whi5SBFSwitch(36.0)) / setpoint_volume(Whi5SBFSwitch(18.0)) ≈
+            2 atol = 1e-2
         # the emergent threshold θ = c* does not depend on W
-        @test whi5_sbf_threshold(Whi5SBFSwitch(36.0)) ≈ whi5_sbf_threshold(Whi5SBFSwitch(18.0)) atol =
-            1e-3
+        @test whi5_sbf_threshold(Whi5SBFSwitch(36.0)) ≈
+            whi5_sbf_threshold(Whi5SBFSwitch(18.0)) atol = 1e-3
 
         # (3) it reproduces the inhibitor-dilution law: an InhibitorDilutionSizer with the
         #     emergent θ has the SAME set-point as the mechanistic switch
         θ = whi5_sbf_threshold(sw)
-        @test setpoint_volume(InhibitorDilutionSizer(sw.W, θ)) ≈ setpoint_volume(sw) rtol = 1e-6
+        @test setpoint_volume(InhibitorDilutionSizer(sw.W, θ)) ≈ setpoint_volume(sw) rtol =
+            1e-6
 
         # (4) and it behaves as a sizer in a lineage (Vd–Vb slope → 0)
         s_sw = simulate_lineage(sw; V0=5.0, n=400, seed=7)
@@ -82,15 +83,19 @@ using Statistics: mean, std
     @testset "LinearSizeControl — slope tracks α; homeostasis iff α·f<1" begin
         @test division_volume(LinearSizeControl(0.7, 12.0), 20.0) == 0.7 * 20.0 + 12.0
         for α in (0.0, 0.5, 1.0, 1.5)
-            s = simulate_lineage(LinearSizeControl(α, 20.0); V0=20.0, n=800, cv=0.06, seed=11)
+            s = simulate_lineage(
+                LinearSizeControl(α, 20.0); V0=20.0, n=800, cv=0.06, seed=11
+            )
             @test isapprox(size_control_slope(s.Vb, s.Vd), α; atol=0.2)
         end
         # homeostasis boundary at α = 1/f: α·f<1 stays bounded; α·f>1 runs away
-        stable = simulate_lineage(LinearSizeControl(1.5, 20.0); daughter_fraction=0.5, n=200,
-                                  cv=0.0, seed=12)                       # α·f = 0.75 < 1
+        stable = simulate_lineage(
+            LinearSizeControl(1.5, 20.0); daughter_fraction=0.5, n=200, cv=0.0, seed=12
+        )                       # α·f = 0.75 < 1
         @test maximum(stable.Vb) < 1e3
-        runaway = simulate_lineage(LinearSizeControl(2.5, 20.0); daughter_fraction=0.5, n=200,
-                                   cv=0.0, seed=13)                      # α·f = 1.25 > 1
+        runaway = simulate_lineage(
+            LinearSizeControl(2.5, 20.0); daughter_fraction=0.5, n=200, cv=0.0, seed=13
+        )                      # α·f = 1.25 > 1
         @test last(runaway.Vb) > 10 * first(runaway.Vb)
     end
 
@@ -101,10 +106,16 @@ using Statistics: mean, std
     # sizer/adder/timer family converges to — sharper than "stays bounded" — and specialises to
     # the textbook sizer (α=0 ⇒ Vb*=f·V*) and adder (α=1 ⇒ Vb*=f·Δ/(1−f)) limits.
     @testset "L1 — linear-map fixed point Vb* = fβ/(1−αf) + scale invariance" begin
-        for (α, β, f) in ((0.0, 40.0, 0.5), (1.0, 20.0, 0.5), (1.5, 20.0, 0.5),
-                          (0.7, 12.0, 0.6), (1.2, 8.0, 0.4))
-            s = simulate_lineage(LinearSizeControl(α, β); V0=5.0, n=400, cv=0.0,
-                                 daughter_fraction=f)
+        for (α, β, f) in (
+            (0.0, 40.0, 0.5),
+            (1.0, 20.0, 0.5),
+            (1.5, 20.0, 0.5),
+            (0.7, 12.0, 0.6),
+            (1.2, 8.0, 0.4),
+        )
+            s = simulate_lineage(
+                LinearSizeControl(α, β); V0=5.0, n=400, cv=0.0, daughter_fraction=f
+            )
             Vb_star = f * β / (1 - α * f)
             @test isapprox(last(s.Vb), Vb_star; rtol=1e-6)              # birth set-point
             @test isapprox(last(s.Vd), α * Vb_star + β; rtol=1e-6)      # division set-point
@@ -117,7 +128,9 @@ using Statistics: mean, std
 
         # geometric convergence at the contraction rate α·f: |Vb_n − Vb*| ~ (αf)^n exactly
         α, β, f = 1.5, 20.0, 0.5
-        s = simulate_lineage(LinearSizeControl(α, β); V0=5.0, n=60, cv=0.0, daughter_fraction=f)
+        s = simulate_lineage(
+            LinearSizeControl(α, β); V0=5.0, n=60, cv=0.0, daughter_fraction=f
+        )
         Vb_star = f * β / (1 - α * f)
         err = abs.(s.Vb .- Vb_star)
         @test isapprox(err[20] / err[10], (α * f)^10; rtol=1e-6)        # rate = (αf)^n
@@ -257,12 +270,24 @@ using Statistics: mean, std
         # pool D_m accumulates. This is the honest basis for the "r(a) couples, D_m(a) drives"
         # framing in the manuscript (gen_daughter_rls_ablation.jl quantifies the fold).
         const_share = simulate_aging_lineage(
-            SizerRule(60.0); n=25, alpha0=0.4, alpha_max=0.4, tau=8.0, damage_form=1.0, cv=0.0,
+            SizerRule(60.0);
+            n=25,
+            alpha0=0.4,
+            alpha_max=0.4,
+            tau=8.0,
+            damage_form=1.0,
+            cv=0.0,
         )
         @test const_share.Ddaughter[end] > const_share.Ddaughter[2]     # rises w/ age at fixed share
         # and the age-eroding share amplifies (does not generate) the late-age inherited burden:
         eroding_share = simulate_aging_lineage(
-            SizerRule(60.0); n=25, alpha0=0.4, alpha_max=0.9, tau=8.0, damage_form=1.0, cv=0.0,
+            SizerRule(60.0);
+            n=25,
+            alpha0=0.4,
+            alpha_max=0.9,
+            tau=8.0,
+            damage_form=1.0,
+            cv=0.0,
         )
         @test eroding_share.Ddaughter[end] > const_share.Ddaughter[end]  # erosion amplifies late burden
     end
@@ -323,14 +348,17 @@ using Statistics: mean, std
 
         # build the population fraction-binned daughter-RLS curve from the package model
         N, nbin, dseed = 4000, 10, 1_000_000
-        binsum = zeros(nbin); binN = zeros(Int, nbin)
+        binsum = zeros(nbin);
+        binN = zeros(Int, nbin)
         for m in 1:N
             traj = damage_trajectory(; seed=m)              # a fresh mother: her D_m(a) series
-            L = length(traj); L < 2 && continue
+            L = length(traj);
+            L < 2 && continue
             for a in 0:(L - 1)
                 Ld = replicative_lifespan(; D0=φ(a) * traj[a + 1], seed=(dseed += 1))
                 b = clamp(floor(Int, (a / (L - 1)) * nbin) + 1, 1, nbin)
-                binsum[b] += Ld; binN[b] += 1
+                binsum[b] += Ld;
+                binN[b] += 1
             end
         end
         @test all(>(0), binN)
@@ -358,12 +386,60 @@ using Statistics: mean, std
         # threshold heterogeneity is what bends the population shape convex.
         det_traj = damage_trajectory(; cv=0.0, crit_cv=0.0)
         Ldet = length(det_traj)
-        yd = Float64[replicative_lifespan(; D0=φ(a) * det_traj[a + 1], cv=0.0, crit_cv=0.0)
-                     for a in 0:(Ldet - 1)]
+        yd = Float64[
+            replicative_lifespan(; D0=φ(a) * det_traj[a + 1], cv=0.0, crit_cv=0.0) for
+            a in 0:(Ldet - 1)
+        ]
         xd = collect(0:(Ldet - 1))
         chord_d = yd[1] .+ (yd[end] - yd[1]) .* (xd .- xd[1]) ./ (xd[end] - xd[1])
         @test all(<=(0), diff(yd))                 # single mother: monotone non-increasing
         @test minimum(yd .- chord_d) > -0.5        # …and ≈ linear (hugs its chord), unlike (3)
+    end
+
+    # ---- CC-P: steady-state population replicative-age structure is geometric ----
+    # A growing culture is the ensemble of ALL a mother's descendants, not one lineage. In
+    # balanced exponential growth every viable cell buds one age-0 daughter and advances a→a+1
+    # each generation, so the population doubles and the replicative-AGE distribution converges
+    # to the geometric law P(age=a)=2^{-(a+1)} (mean age 1; half the cells are virgin daughters).
+    # This is a size-rule-independent consequence of exponential growth (Hartwell & Unger 1977).
+    @testset "CC-P — population geometric replicative-age structure" begin
+        # (1) DETERMINISTIC analytic gate (no per-cell heterogeneity → the synchronous recursion
+        #     gives the geometric law EXACTLY for the young age classes): each class is half the
+        #     previous, and exactly half the population are virgin (age-0) daughters.
+        det = simulate_population(SizerRule(60.0); target=5000, cv=0.0, crit_cv=0.0, seed=1)
+        a(k) = count(==(k), det.age)
+        @test a(0) == length(det.age) ÷ 2                    # exactly half are virgins
+        @test a(1) == a(0) ÷ 2                               # geometric halving …
+        @test a(2) == a(1) ÷ 2
+        @test a(3) == a(2) ÷ 2
+        @test isapprox(mean(det.age), 1.0; atol=1e-2)        # mean replicative age → 1
+
+        # (2) STOCHASTIC campaign (default cell-to-cell heterogeneity, maternal enlargement on):
+        #     the converged structure still matches the geometric law to a tight tolerance, and
+        #     senescence is a negligible tail at a budding-yeast lifespan (does not distort it).
+        pop = simulate_population(
+            SizerRule(60.0); target=200_000, enlarge_max=0.45, enlarge_tau=8.0, seed=1
+        )
+        N = length(pop.age)
+        f(k) = count(==(k), pop.age) / N
+        @test isapprox(f(0), 0.5; atol=0.01)                 # virgin-daughter fraction ≈ 1/2
+        @test isapprox(f(1) / f(0), 0.5; atol=0.03)          # class ratio ≈ 1/2 (geometric)
+        @test isapprox(f(2) / f(1), 0.5; atol=0.05)
+        @test isapprox(mean(pop.age), 1.0; atol=0.1)         # mean replicative age ≈ 1
+        @test count(i -> pop.age[i] >= pop.rls[i], 1:N) / N < 1e-3   # senescence negligible
+
+        # (3) the age structure is SIZE-RULE-INDEPENDENT: an adder population has the same
+        #     geometric law (the structure comes from exponential growth, not the size rule).
+        adr = simulate_population(AdderRule(20.0); target=100_000, seed=2)
+        @test isapprox(count(==(0), adr.age) / length(adr.age), 0.5; atol=0.01)
+
+        # (4) SIZE face: with maternal enlargement, the rare old mothers bud the largest
+        #     daughters, so the newborn (age-0) birth-size distribution is right-skewed above its
+        #     floor frac(0)·V* = 0.32·60 = 19.2 fL (a young mother's daughter).
+        nb = pop.Vbirth[pop.age .== 0]
+        @test minimum(nb) >= 0.32 * 60.0 - 1e-6              # floor = youngest-mother daughter
+        @test mean(nb) > minimum(nb)                         # right-skewed by enlarged old mothers
+        @test maximum(nb) > 1.5 * minimum(nb)                # old-mother daughters substantially bigger
     end
 
     # ---- lineage timecourse: the mother is monotonic (never shrinks) over the lifespan ----
@@ -417,15 +493,29 @@ using Statistics: mean, std
         # 25 leaves headroom for measurement noise / fixed overhead yet stays 4× below O(n²).
         # ceil_per is a loose per-element byte ceiling catching a constant-factor blow-up.
         cases = (
-            ("simulate_lineage",
-                n -> simulate_lineage(SizerRule(2.0); n=n, seed=1), 400, 4000, 1_000),
-            ("lifespan_distribution",
-                n -> lifespan_distribution(n; seed0=1), 50, 500, 100_000),
-            ("simulate_aging_lineage",
-                n -> simulate_aging_lineage(InhibitorDilutionSizer(1.0, 0.025); n=n, seed=1),
-                25, 250, 8_000),
-            ("lineage_timecourse",
-                n -> lineage_timecourse(; n_max=n), 29, 290, 100_000),
+            (
+                "simulate_lineage",
+                n -> simulate_lineage(SizerRule(2.0); n=n, seed=1),
+                400,
+                4000,
+                1_000,
+            ),
+            (
+                "lifespan_distribution",
+                n -> lifespan_distribution(n; seed0=1),
+                50,
+                500,
+                100_000,
+            ),
+            (
+                "simulate_aging_lineage",
+                n ->
+                    simulate_aging_lineage(InhibitorDilutionSizer(1.0, 0.025); n=n, seed=1),
+                25,
+                250,
+                8_000,
+            ),
+            ("lineage_timecourse", n -> lineage_timecourse(; n_max=n), 29, 290, 100_000),
         )
         for (name, f, base, big, ceil_per) in cases
             a_base = alloc(() -> f(base))

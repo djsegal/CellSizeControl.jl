@@ -73,6 +73,7 @@ simulate_aging_lineage
 replicative_lifespan
 damage_trajectory
 lifespan_distribution
+simulate_population
 ```
 
 ## Single-cell growth and the cell cycle

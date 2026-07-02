@@ -36,6 +36,7 @@ export SizeControlRule,
     replicative_lifespan,
     damage_trajectory,
     lifespan_distribution,
+    simulate_population,
     qss_growth_rate,
     exponential_growth_rate,
     grow_to,
@@ -219,7 +220,14 @@ the bistable window — that hysteresis is the irreversible Start switch.
 """
 function whi5_sbf_steady(rule::Whi5SBFSwitch, c::Real; from_high::Bool=false)
     return _sbf_steady(
-        float(c), from_high ? 1.0 : 0.0, rule.beta, rule.gamma, rule.Ke, rule.q, rule.Kx, rule.p
+        float(c),
+        from_high ? 1.0 : 0.0,
+        rule.beta,
+        rule.gamma,
+        rule.Ke,
+        rule.q,
+        rule.Kx,
+        rule.p,
     )
 end
 
@@ -252,7 +260,12 @@ threshold `θ = c*` now EMERGENT from a bistable mechanism rather than imposed. 
 [`whi5_sbf_threshold`](@ref) and [`InhibitorDilutionSizer`](@ref).
 """
 function Whi5SBFSwitch(
-    W::Real; beta::Real=1.0, gamma::Real=1.0, Ke::Real=0.30, q::Real=4.0, Kx::Real=0.40,
+    W::Real;
+    beta::Real=1.0,
+    gamma::Real=1.0,
+    Ke::Real=0.30,
+    q::Real=4.0,
+    Kx::Real=0.40,
     p::Real=4.0,
 )
     Vstar = _whi5_sbf_start_volume(
@@ -485,8 +498,21 @@ function replicative_lifespan(;
     max_gen::Int=500,
 )
     rng = Random.MersenneTwister(seed)
-    a, _ = _age_to_senescence(rng, D0; D_crit, crit_cv, production, kappa, cv,
-        alpha0, alpha_max, tau, segregate, max_gen, record=false)
+    a, _ = _age_to_senescence(
+        rng,
+        D0;
+        D_crit,
+        crit_cv,
+        production,
+        kappa,
+        cv,
+        alpha0,
+        alpha_max,
+        tau,
+        segregate,
+        max_gen,
+        record=false,
+    )
     return a
 end
 
@@ -564,8 +590,21 @@ function damage_trajectory(;
     max_gen::Int=500,
 )
     rng = Random.MersenneTwister(seed)
-    _, traj = _age_to_senescence(rng, D0; D_crit, crit_cv, production, kappa, cv,
-        alpha0, alpha_max, tau, segregate, max_gen, record=true)
+    _, traj = _age_to_senescence(
+        rng,
+        D0;
+        D_crit,
+        crit_cv,
+        production,
+        kappa,
+        cv,
+        alpha0,
+        alpha_max,
+        tau,
+        segregate,
+        max_gen,
+        record=true,
+    )
     return traj
 end
 
@@ -579,6 +618,108 @@ damage model to a measured RLS distribution (Schnitzer 2022).
 function lifespan_distribution(n::Int; seed0::Int=1, kwargs...)
     return [replicative_lifespan(; seed=seed0 + i - 1, kwargs...) for i in 1:n]
 end
+
+# ---------------------------------------------------------------------------
+# Exponentially growing POPULATION → steady-state replicative-age structure.
+# The single-lineage view (above) follows one mother; a growing culture is the
+# ensemble of ALL her descendants. In balanced exponential growth every viable
+# cell divides once per generation (buds one age-0 daughter and advances a→a+1),
+# so the population doubles and the replicative-AGE distribution converges to the
+# geometric law P(age = a) = 2^{-(a+1)} (mean age 1): half the cells are virgin
+# daughters, a quarter have budded once, … (Hartwell & Unger 1977; Lord & Wheals
+# 1980). The structure is size-rule-independent; with `enlarge_max>0` the rare
+# old mothers bud the largest daughters, right-skewing the newborn-size distribution.
+# ---------------------------------------------------------------------------
+"""
+    simulate_population(rule; target=100_000, enlarge_max=0.0, enlarge_tau=8.0,
+                        alpha0=0.32, alpha_max=0.5, tau=10.0, D_crit=38.0, crit_cv=0.45,
+                        production=1.0, kappa=0.03, cv=0.05, max_gen=200, seed=1)
+        -> (; age, rls, Vbirth, ngen)
+
+Grow a synchronous exponential population from a single virgin founder until it reaches
+`target` cells, and return the per-cell state of the final population: replicative `age`,
+intrinsic replicative lifespan `rls` (drawn per cell via [`replicative_lifespan`](@ref)), and
+birth volume `Vbirth`. Each generation every non-senescent cell (age `< rls`) divides: it buds
+one age-0 daughter (birth volume `frac(a)·V*(a)`, `frac` = [`aging_daughter_fraction`](@ref) and
+`V*(a)` rising with the mother's age when `enlarge_max>0`) and advances to `age+1`, keeping its
+(monotonically enlarging) body. Senescent cells persist but stop dividing — at a budding-yeast
+mean lifespan (~25) they are a `~2^{-26}` tail and do not perturb the young-age structure.
+
+The steady state is the classic geometric replicative-age distribution `P(age=a) = 2^{-(a+1)}`
+(half the population are virgin daughters; mean replicative age 1) — a size-rule-independent
+consequence of balanced exponential growth. Use [`simulate_lineage`](@ref) /
+[`simulate_aging_lineage`](@ref) for the single-cell-line view instead.
+
+```jldoctest
+julia> pop = simulate_population(SizerRule(60.0); target=5000, cv=0.0, crit_cv=0.0, seed=1);
+
+julia> count(==(0), pop.age) == length(pop.age) ÷ 2         # exactly half are virgin daughters
+true
+
+julia> a0, a1, a2 = count(==(0), pop.age), count(==(1), pop.age), count(==(2), pop.age);
+
+julia> a1 == a0 ÷ 2 && a2 == a1 ÷ 2                         # geometric: each class halves
+true
+```
+"""
+function simulate_population(
+    rule::SizeControlRule;
+    target::Int=100_000,
+    enlarge_max::Real=0.0,
+    enlarge_tau::Real=8.0,
+    alpha0::Real=0.32,
+    alpha_max::Real=0.5,
+    tau::Real=10.0,
+    D_crit::Real=38.0,
+    crit_cv::Real=0.45,
+    production::Real=1.0,
+    kappa::Real=0.03,
+    cv::Real=0.05,
+    max_gen::Int=200,
+    seed::Int=1,
+)
+    rng = Random.MersenneTwister(seed)
+    draw_rls() = replicative_lifespan(;
+        D_crit,
+        crit_cv,
+        production,
+        kappa,
+        cv,
+        alpha0,
+        alpha_max,
+        tau,
+        seed=rand(rng, 1:typemax(Int32)),
+    )
+    frac0 = aging_daughter_fraction(0; alpha0, alpha_max, tau)
+    age = Int[0]
+    rls = Int[draw_rls()]
+    Vbirth = Float64[frac0 * division_volume(rule, float(setpoint_hint(rule)))]
+    g = 0
+    while length(age) < target && g < max_gen
+        g += 1
+        n = length(age)
+        @inbounds for i in 1:n
+            a = age[i]
+            a < rls[i] || continue                       # senescent: persists, does not divide
+            grow = 1.0 + enlarge_max * (1.0 - exp(-a / enlarge_tau))
+            Vdiv = division_volume(rule, Vbirth[i]) * grow   # mother's division volume at age a
+            frac = aging_daughter_fraction(a; alpha0, alpha_max, tau)
+            push!(age, 0)                                # the new virgin daughter
+            push!(rls, draw_rls())
+            push!(Vbirth, frac * Vdiv)
+            age[i] = a + 1                               # mother advances, keeps her body
+            Vbirth[i] = Vdiv
+        end
+    end
+    return (; age, rls, Vbirth, ngen=g)
+end
+
+# A birth-size seed for the founder's first division volume; for rules whose division volume
+# ignores Vb (the sizers) this is exact, for the size-dependent rules it only seeds gen 0.
+setpoint_hint(r::SizeControlRule) = 1.0
+setpoint_hint(r::SizerRule) = r.Vstar
+setpoint_hint(r::InhibitorDilutionSizer) = setpoint_volume(r)
+setpoint_hint(r::Whi5SBFSwitch) = r.Vstar
 
 # ---------------------------------------------------------------------------
 # Energetic single-cell growth + the two-step G1 (Di Talia 2007). With a sizer

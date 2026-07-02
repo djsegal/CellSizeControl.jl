@@ -1,0 +1,13 @@
+metric,value
+N_cells,1048415
+generations,20
+virgin_fraction,0.499995
+age1_fraction,0.249999
+ratio_age1_age0,0.500004
+mean_replicative_age,0.999999
+max_replicative_age,20
+senescent_fraction,2.4799339956028864e-5
+newborn_size_mean,21.3855
+newborn_size_sd,2.8774
+newborn_size_min,19.2
+newborn_size_max,40.8297

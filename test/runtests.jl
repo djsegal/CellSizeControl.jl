@@ -144,6 +144,58 @@ using Statistics: mean, std
         end
     end
 
+    # ---- prediction: birth-size CV amplifies toward the homeostasis boundary; asymmetry
+    # erosion drives the TIMER (only) to marginality. The linear map with per-division
+    # multiplicative noise cv has stationary CV(Vb) = cv/√(1−(αf)²), diverging as the return
+    # slope r=αf → 1. Since replicative aging erodes f from ~0.32 toward 0.5, the critical
+    # control slope α_c(f)=1/f falls to exactly 2 (the TIMER slope) at f=0.5: sizer/adder stay
+    # homeostatic at every age, the timer is driven to the boundary. Falsification: size CV flat
+    # across the sizer→timer axis, or independent of the return slope as asymmetry erodes.
+    @testset "prediction — CV(Vb)=cv/√(1−(αf)²) + timer-critical aging boundary" begin
+        cv = 0.06
+        cv_birth(α, f; R=4000, n=200, seed0=1) = begin
+            finals = [
+                last(
+                    simulate_lineage(
+                        LinearSizeControl(α, 20.0); V0=20.0, n=n, cv=cv, daughter_fraction=f,
+                        seed=seed0 + r,
+                    ).Vb,
+                ) for r in 1:R
+            ]
+            std(finals) / mean(finals)
+        end
+
+        # sizer baseline (r=0): each birth is independent, so CV(Vb) = cv exactly
+        @test isapprox(cv_birth(0.0, 0.5), cv; rtol=0.05)
+
+        # HEADLINE (locked): amplification at (α=1.6, f=0.5) ⇒ r=0.8 matches theory 5/3
+        A = cv_birth(1.6, 0.5) / cv_birth(0.0, 0.5)
+        @test isapprox(A, 5 / 3; rtol=0.06)                         # measured 1.65 vs 5/3
+
+        # the amplification law across the sizer→timer axis (Monte-Carlo vs closed form)
+        for α in (0.5, 1.0, 1.5, 1.8)
+            r = α * 0.5
+            @test isapprox(cv_birth(α, 0.5), cv / sqrt(1 - r^2); rtol=0.05)
+        end
+
+        # amplification is strictly monotone increasing along the axis (toward the boundary)
+        cvs = [cv_birth(α, 0.5) for α in (0.0, 0.5, 1.0, 1.5, 1.8)]
+        @test issorted(cvs)
+
+        # the exact aging boundary: α_c(f)=1/f, and at the erosion endpoint f=alpha_max=0.5
+        # this is EXACTLY the timer slope 2 — so as f→0.5 the timer's return slope r=α·f→1.
+        f_end = aging_daughter_fraction(10_000)                     # → alpha_max = 0.5
+        @test isapprox(f_end, 0.5; atol=1e-6)
+        @test 1 / f_end == 2.0                                      # α_c = timer slope
+        @test 2.0 * f_end ≈ 1.0                                     # timer marginal at f=0.5
+
+        # aging pushes the return slope toward the boundary: r(a)=α·f(a) rises with age for the
+        # timer (α=2) but the sizer (α=0) is pinned at 0 — the mode-specific direction.
+        r_timer = [2.0 * aging_daughter_fraction(a) for a in (0, 10, 30)]
+        @test issorted(r_timer) && r_timer[1] > 0.6 && last(r_timer) > 0.97
+        @test all(a -> 0.0 * aging_daughter_fraction(a) == 0.0, (0, 10, 30))   # sizer pinned
+    end
+
     # ---- L2: reference behaviour — the timer collapses, the sizer is stable ----
     # (reproduces the yeast-wcm CellSize finding: a sub-doubling timer drives
     #  daughters toward 0; the inhibitor-dilution sizer holds them at V*/2.)

@@ -129,7 +129,7 @@ def main():
     axB.set_axisbelow(True)
     # Centered over the old-mother bar pair (data x=1.0, the divider between its blue/orange bars),
     # in the clear space above the short old-mother bars. Boxed for readability (not a halo hack).
-    axB.text(1.0, 21.0,
+    axB.text(1.0, 19.5,
              f"fold-drop\nmodel {model_fold:.1f}× ({fold_ci[1]:.1f}–{fold_ci[2]:.1f})"
              f"\nvs data {ken_fold:.1f}×",
              ha="center", va="center", fontsize=12, fontweight="bold", linespacing=1.4,

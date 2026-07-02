@@ -1,0 +1,11 @@
+case,Vstar,source,mean,cv,skew,ratio
+calibrated,60.0,analytic,21.3858,0.1346,1.562,1.11384
+calibrated,60.0,simulation,21.3855,0.1345,1.5603,1.11383
+scalefree,30.0,analytic,10.6929,0.1346,1.562,1.11384
+scalefree,30.0,simulation,10.6928,0.1346,1.5614,1.11383
+scalefree,120.0,analytic,42.7716,0.1346,1.562,1.11384
+scalefree,120.0,simulation,42.7712,0.1346,1.5614,1.11383
+full,60.0,analytic,21.3858,0.1346,1.562,1.11384
+erosion_only,60.0,analytic,20.3356,0.0715,1.3908,1.05915
+enlarge_only,60.0,analytic,20.1085,0.0578,1.3908,1.04732
+neither,60.0,analytic,19.2,0.0,0.0,1.0

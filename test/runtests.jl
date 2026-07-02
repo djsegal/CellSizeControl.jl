@@ -442,6 +442,55 @@ using Statistics: mean, std
         @test maximum(nb) > 1.5 * minimum(nb)                # old-mother daughters substantially bigger
     end
 
+    # ---- CC-N: the newborn-size law is the geometric-mixture PREDICTION of that structure ----
+    # The population newborn (virgin-daughter) size distribution is the age-eroding division
+    # asymmetry sampled through the fixed geometric age law P(age=a)=2^{-(a+1)}: a discrete
+    # mixture {(2^{-(a+1)}, frac(a)·V*·enlarge(a))} whose closed-form moments `newborn_size_law`
+    # predicts. Prediction (calibrated α0=0.32→α_max=0.5, τ=8; enlarge 0.45, τ_e=8): the mean
+    # newborn size is a fixed multiple R≈1.114 of the young-mother floor α0·V*, the distribution
+    # is right-skewed (skew≈1.56, CV≈0.135), and R/CV/skew are V*-INDEPENDENT (scale-free). They
+    # collapse to a symmetric point mass only if daughter size is maternal-age-independent.
+    @testset "CC-N — newborn-size law (geometric-mixture prediction, scale-free)" begin
+        law = newborn_size_law(;
+            alpha0=0.32, alpha_max=0.5, tau=8.0, enlarge_max=0.45, enlarge_tau=8.0, Vstar=60.0
+        )
+        # (1) HEADLINE numbers locked (the falsifiable prediction):
+        @test isapprox(law.ratio, 1.1138; atol=5e-4)         # mean / (α0·V*): scale-free constant
+        @test isapprox(law.cv, 0.1346; atol=5e-4)            # coefficient of variation
+        @test isapprox(law.skew, 1.562; atol=2e-3)           # strongly right-skewed
+        @test law.skew > 0.5                                 # right-skew is the qualitative signature
+
+        # (2) SCALE-FREE: cv/skew/ratio are identical at any set-point V* (sizes just rescale).
+        for V in (30.0, 137.0, 240.0)
+            l = newborn_size_law(;
+                alpha0=0.32, alpha_max=0.5, tau=8.0, enlarge_max=0.45, enlarge_tau=8.0, Vstar=V
+            )
+            @test isapprox(l.cv, law.cv; atol=1e-9)
+            @test isapprox(l.skew, law.skew; atol=1e-9)
+            @test isapprox(l.ratio, law.ratio; atol=1e-9)
+            @test isapprox(l.mean, law.mean * V / 60.0; rtol=1e-9)   # mean scales linearly with V*
+        end
+
+        # (3) DEGENERATE limit: maternal-age-independent daughter size ⇒ symmetric point mass.
+        flat = newborn_size_law(; alpha0=0.32, alpha_max=0.32, enlarge_max=0.0, Vstar=60.0)
+        @test flat.skew == 0.0
+        @test isapprox(flat.cv, 0.0; atol=1e-9)
+        @test isapprox(flat.ratio, 1.0; atol=1e-12)
+
+        # (4) MECHANISM gate: a Monte-Carlo population reproduces the analytic moments — the
+        #     closed form really is the newborn distribution of the balanced-growth culture.
+        pop = simulate_population(
+            SizerRule(60.0); target=150_000, enlarge_max=0.45, enlarge_tau=8.0,
+            alpha0=0.32, alpha_max=0.5, tau=8.0, seed=1,
+        )
+        nb = pop.Vbirth[pop.age .== 0]
+        m, sd = mean(nb), std(nb)
+        sk = mean(((nb .- m) ./ sd) .^ 3)
+        @test isapprox(m, law.mean; rtol=0.01)               # mean within 1% of prediction
+        @test isapprox(sd / m, law.cv; rtol=0.02)            # CV within 2%
+        @test isapprox(sk, law.skew; rtol=0.03)              # skew within 3%
+    end
+
     # ---- lineage timecourse: the mother is monotonic (never shrinks) over the lifespan ----
     @testset "lineage_timecourse — monotonic mother, buds detach" begin
         tc = lineage_timecourse(; n_max=29)

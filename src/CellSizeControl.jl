@@ -37,6 +37,7 @@ export SizeControlRule,
     damage_trajectory,
     lifespan_distribution,
     simulate_population,
+    newborn_size_law,
     qss_growth_rate,
     exponential_growth_rate,
     grow_to,
@@ -720,6 +721,69 @@ setpoint_hint(r::SizeControlRule) = 1.0
 setpoint_hint(r::SizerRule) = r.Vstar
 setpoint_hint(r::InhibitorDilutionSizer) = setpoint_volume(r)
 setpoint_hint(r::Whi5SBFSwitch) = r.Vstar
+
+"""
+    newborn_size_law(; alpha0=0.32, alpha_max=0.5, tau=10.0, enlarge_max=0.0,
+                     enlarge_tau=8.0, Vstar=1.0, max_age=80)
+        -> (; mean, sd, cv, skew, ratio)
+
+Closed-form moments of the population **newborn (virgin-daughter) size distribution** predicted
+by sampling the age-eroding division asymmetry through the geometric replicative-age law. In
+balanced exponential growth the mothers of replicative age `a` are a fixed fraction
+`2^{-(a+1)}` of the culture ([`simulate_population`](@ref)), and each buds one age-0 daughter of
+size `frac(a)·V*·enlarge(a)` — so the newborn sizes inherit those geometric weights exactly. With
+`frac(a)` the age-eroding daughter fraction ([`aging_daughter_fraction`](@ref)) and
+`enlarge(a) = 1 + enlarge_max·(1 − e^{−a/enlarge_tau})` the maternal-enlargement of the set-point,
+the distribution is the discrete geometric mixture `{(2^{-(a+1)}, frac(a)·V*·enlarge(a))}`.
+
+Returns its mean, standard deviation, coefficient of variation, skewness, and the **scale-free
+ratio** `mean / (alpha0·V*)` (the mean newborn size in units of the youngest-mother daughter).
+The `cv`, `skew`, and `ratio` are **independent of `V*`** — a scale-free signature of the
+mechanism: any monotone maternal-age→daughter-size relation makes the newborn distribution
+right-skewed (`skew > 0`); it collapses to a symmetric point mass (`cv = skew = 0`) only when the
+daughter size does not depend on maternal age (`alpha_max = alpha0` and `enlarge_max = 0`). This
+is the analytic counterpart of the age-0 birth-size histogram from [`simulate_population`](@ref),
+which it reproduces to Monte-Carlo precision.
+
+```jldoctest
+julia> law = newborn_size_law(; tau=8.0, enlarge_max=0.45, enlarge_tau=8.0, Vstar=60.0);
+
+julia> round(law.ratio, digits=4)          # mean newborn / (α0·V*): a scale-free constant
+1.1138
+
+julia> round(law.cv, digits=4), round(law.skew, digits=4)   # right-skewed geometric mixture
+(0.1346, 1.562)
+
+julia> newborn_size_law(; alpha0=0.32, alpha_max=0.32, enlarge_max=0.0).skew   # no age effect ⇒ symmetric
+0.0
+```
+"""
+function newborn_size_law(;
+    alpha0::Real=0.32,
+    alpha_max::Real=0.5,
+    tau::Real=10.0,
+    enlarge_max::Real=0.0,
+    enlarge_tau::Real=8.0,
+    Vstar::Real=1.0,
+    max_age::Int=80,
+)
+    ws = [2.0^(-(a + 1)) for a in 0:max_age]
+    ws ./= sum(ws)                                    # renormalize the truncated geometric law
+    ss = [
+        aging_daughter_fraction(a; alpha0=alpha0, alpha_max=alpha_max, tau=tau) *
+        Vstar *
+        (1 + enlarge_max * (1 - exp(-a / enlarge_tau))) for a in 0:max_age
+    ]
+    mean_s = sum(ws .* ss)
+    # central moments directly about the mean (stable when the mixture is near-degenerate)
+    sd = sqrt(sum(ws .* (ss .- mean_s) .^ 2))
+    cv = mean_s > 0 ? sd / mean_s : 0.0
+    # a maternal-age-independent size (alpha_max=alpha0, enlarge_max=0) is a point mass: the
+    # spread is then only floating-point noise, so a relative floor guards the skew ratio 0/0.
+    skew = cv > 1e-9 ? sum(ws .* (ss .- mean_s) .^ 3) / sd^3 : 0.0
+    ratio = alpha0 > 0 ? mean_s / (alpha0 * Vstar) : NaN
+    return (; mean=mean_s, sd, cv, skew, ratio)
+end
 
 # ---------------------------------------------------------------------------
 # Energetic single-cell growth + the two-step G1 (Di Talia 2007). With a sizer

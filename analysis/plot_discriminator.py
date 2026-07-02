@@ -64,7 +64,7 @@ def main():
             ylabel=r"Division volume $V_d$ (normalized)",
             title="(a) The size-control slope discriminator")
     axA.set_ylim(bottom=0)  # honest baseline + opens room under the lower-right legend
-    axA.set_xlim(0, 1.75)  # widen so the lower-right legend clears the points
+    axA.set_xlim(0, 1.7)  # widen so the lower-right legend clears the points
     leg = opaque_legend(axA, loc="lower right", markerscale=1.7, fontsize=9.5,
                         title="Soifer-Amir 2016\n(dashed = target)",
                         title_fontsize=9.5)

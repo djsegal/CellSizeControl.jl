@@ -263,6 +263,64 @@ using Statistics: mean, std, cor
         end
     end
 
+    # ---- combined guard: the pole r=α·f ties the thread's observables together ----
+    # The three size-control-dynamics results — CV amplification CV(Vb)=cv/√(1−r²), lineage
+    # autocorrelation ρ_k=r^k, and nutrient-shift relaxation τ=−1/ln r — are all reports of the
+    # ONE AR(1) pole r=α·f. On a single homeostatic lineage/config they must agree: the measured
+    # ρ1, the CV-amplification (given the intrinsic noise), and the step-response relaxation rate
+    # all recover the same r, their memories −1/ln r match size_memory's memory_gen, and the
+    # invariant √(CV²(1−ρ1²)) recovers cv. If any observable drifts from the shared pole the map
+    # is not the claimed AR(1). See docs/RETURN_MAP_POLE.md.
+    @testset "combined — pole r ties CV-amplification, autocorrelation, and relaxation" begin
+        α, β, f, cv = 1.6, 20.0, 0.5, 0.06        # one config, homeostatic: r = α·f = 0.8 < 1
+        r_true = α * f
+        @test r_true == 0.8
+
+        ac(Vb, k; burn=2000) = begin
+            x = @view Vb[(burn + 1):end]
+            cor(@view(x[1:(end - k)]), @view(x[(k + 1):end]))
+        end
+
+        # one long stochastic lineage → ρ1, ρ2, and the stationary birth-size CV
+        s = simulate_lineage(
+            LinearSizeControl(α, β); V0=β, n=80_000, cv=cv, daughter_fraction=f, seed=7
+        )
+        x = @view s.Vb[2001:end]
+        ρ1 = ac(s.Vb, 1)
+        CVb = std(x) / mean(x)
+        @test isapprox(ac(s.Vb, 2), r_true^2; atol=0.015)      # ρ2 = r² (geometric decay)
+
+        # three INDEPENDENT reports of the same pole r
+        r_autocorr = ρ1                                         # (1) lag-1 autocorrelation
+        r_cv = sqrt(1 - (cv / CVb)^2)                           # (2) CV-amplification (cv known)
+        fp(α, β, f) = f * β / (1 - α * f)
+        v1, v2 = fp(α, 20.0, f), fp(α, 40.0, f)
+        st = simulate_lineage(                                  # deterministic β:20→40 step
+            LinearSizeControl(α, 40.0);
+            V0=v1,
+            n=12,
+            cv=0.0,
+            daughter_fraction=f,
+            seed=1,
+        )
+        r_step = mean((st.Vb[n + 1] - v2) / (st.Vb[n] - v2) for n in 1:8)  # (3) relaxation rate
+
+        # each reports α·f, and they agree with one another
+        for rᵢ in (r_autocorr, r_cv, r_step)
+            @test isapprox(rᵢ, r_true; atol=0.015)
+        end
+        @test maximum(abs, (r_autocorr - r_cv, r_autocorr - r_step, r_cv - r_step)) < 0.015
+
+        # the relaxation memory −1/ln r agrees across reports and with the closed form
+        τ_closed = size_memory(LinearSizeControl(α, β); daughter_fraction=f).memory_gen
+        for rᵢ in (r_autocorr, r_cv, r_step)
+            @test isapprox(-1 / log(rᵢ), τ_closed; rtol=0.05)
+        end
+
+        # the mode-/set-point-free invariant recovers the intrinsic per-division noise
+        @test isapprox(sqrt(CVb^2 * (1 - ρ1^2)), cv; rtol=0.02)
+    end
+
     # ---- L2: reference behaviour — the timer collapses, the sizer is stable ----
     # (reproduces the yeast-wcm CellSize finding: a sub-doubling timer drives
     #  daughters toward 0; the inhibitor-dilution sizer holds them at V*/2.)

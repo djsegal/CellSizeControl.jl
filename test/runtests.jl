@@ -402,4 +402,36 @@ using Statistics: mean, std
         @test issorted(slopes)                                          # stronger timer → larger slope
         @test all(>(0), slopes)
     end
+
+    # ---- perf guard: the compute-campaign hot paths stay O(n), not O(n²) ----
+    # A regression tripwire ahead of the CC-1..CC-5 population campaigns (10^5–10^6 cells):
+    # for each hot path, measure the bytes allocated at a base workload and at 10× it, and
+    # assert the growth is near-linear — far below the ~100× a quadratic blow-up would show —
+    # plus a generous absolute per-element ceiling. Uses Base `@allocated` (deterministic, no
+    # extra dependency); the *scaling ratio* — not the raw byte count — is the portable guard,
+    # so it holds across Julia versions where the absolute allocation sizes drift.
+    @testset "perf — hot paths allocate O(n) (no quadratic blow-up)" begin
+        alloc(f) = (f(); @allocated f())        # warm up, then bytes for one call
+
+        # 10× the workload must not cost ~100× (quadratic); linear ⇒ ratio ≲ 10. A bound of
+        # 25 leaves headroom for measurement noise / fixed overhead yet stays 4× below O(n²).
+        # ceil_per is a loose per-element byte ceiling catching a constant-factor blow-up.
+        cases = (
+            ("simulate_lineage",
+                n -> simulate_lineage(SizerRule(2.0); n=n, seed=1), 400, 4000, 1_000),
+            ("lifespan_distribution",
+                n -> lifespan_distribution(n; seed0=1), 50, 500, 100_000),
+            ("simulate_aging_lineage",
+                n -> simulate_aging_lineage(InhibitorDilutionSizer(1.0, 0.025); n=n, seed=1),
+                25, 250, 8_000),
+            ("lineage_timecourse",
+                n -> lineage_timecourse(; n_max=n), 29, 290, 100_000),
+        )
+        for (name, f, base, big, ceil_per) in cases
+            a_base = alloc(() -> f(base))
+            a_big = alloc(() -> f(big))
+            @test a_big / a_base < 25            # near-linear scaling, not O(n²)
+            @test a_big / big < ceil_per         # loose absolute per-element ceiling
+        end
+    end
 end

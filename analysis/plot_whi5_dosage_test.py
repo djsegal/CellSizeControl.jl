@@ -100,7 +100,7 @@ def main() -> None:
     axB.text(2.46, 0.92, "no change (1×)", fontsize=12, color="0.25",
              ha="right", va="top", zorder=6, bbox=_rbox)
     for x, f in zip(xpos, folds):
-        halo(axB.text(x, f + 0.05, f"{f:.2f}$\\times$", ha="center", va="bottom",
+        halo(axB.text(x, f + 0.13, f"{f:.2f}$\\times$", ha="center", va="bottom",
                       fontsize=11.5, color="0.15"))
     # overlay the mixed dilution+titration extension (V* = g*V0 + W/c*, one extra param rho):
     # it turns the pure model's 2x into the observed sub-proportional folds, and haploid > diploid.
@@ -111,14 +111,15 @@ def main() -> None:
             for row in csv.DictReader(fh):
                 mixed[int(row["ploidy"])] = float(row["fold"])
     if mixed:
-        mx = [1, 2]; my = [mixed[1], mixed[2]]
-        axB.plot(mx, my, "D", ms=11, mfc="none", mec=GREEN, mew=2.2, zorder=7,
+        # offset the markers to the bars' right shoulders so they don't sit on the fold labels
+        mx = [1.26, 2.26]; my = [mixed[1], mixed[2]]
+        axB.plot(mx, my, "D", ms=9, mfc="none", mec=GREEN, mew=2.2, zorder=7,
                  label="Mixed dilution+titration")
         opaque_legend(axB, loc="upper right", fontsize=11, markerscale=1.0)
     axB.set_xticks(xpos)
     axB.set_xticklabels(labels, fontsize=12)
     axB.set(ylabel=r"Size fold-change for $1\times\!\to\!2\times$ WHI5",
-            title="(b) Doubling Whi5 dose (fixed ploidy)", ylim=(0, 2.45))
+            title="(b) Doubling Whi5 dose (fixed ploidy)", ylim=(0, 2.7))
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     issues = pub_audit(fig)

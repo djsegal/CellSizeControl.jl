@@ -58,10 +58,11 @@ def main() -> None:
     xs = np.linspace(0, pp.max(), 300)
     axB.plot(xs, norm.pdf(xs, MEAN_T, SD_T), "-", lw=2.6, color=VERM,
              label=f"McCormick 2015 WT, suppl. data\n(mean {MEAN_T}, SD {SD_T})")
-    axB.axvline(pp.mean(), color=BLUE, lw=1.4, ls="--")
-    axB.axvline(MEAN_T, color=VERM, lw=1.4, ls=":")
+    # cap the mean-markers just above the density peak so they don't run up behind the legend
+    axB.axvline(pp.mean(), color=BLUE, lw=1.4, ls="--", ymax=0.68)
+    axB.axvline(MEAN_T, color=VERM, lw=1.4, ls=":", ymax=0.68)
     # headroom above the density peak so the legend sits clear of both the bars and the curve
-    ytop = max(n.max(), norm.pdf(MEAN_T, MEAN_T, SD_T)) * 1.42
+    ytop = 0.065  # fixed headroom so the legend clears the histogram peak
     axB.set(xlabel="Replicative lifespan (divisions)", ylabel="Probability density",
             title="(b) Posterior-predictive matches the data", xlim=(0, 60),
             ylim=(0, ytop))

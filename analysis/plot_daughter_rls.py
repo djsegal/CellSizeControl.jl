@@ -141,7 +141,7 @@ def main():
                   f"absolute lifespans run ~{off*100:.0f}% low;\n"
                   "the held-out claim is the fold, not the level",
                   ha="left", va="top", fontsize=10.5, color="0.30", style="italic"))
-    opaque_legend(axB, loc="upper right", fontsize=11)
+    opaque_legend(axB, loc="upper right", bbox_to_anchor=(1.0, 0.84), fontsize=11)
 
     fig.tight_layout(rect=(0, 0, 1, 0.94))
     issues = pub_audit(fig)

@@ -3,7 +3,7 @@ using Test
 using Aqua
 using ExplicitImports
 using JET
-using Statistics: mean, std
+using Statistics: mean, std, cor
 
 @testset "CellSizeControl" begin
     # ---- Q: package-quality gates (release-readiness) ----
@@ -194,6 +194,73 @@ using Statistics: mean, std
         r_timer = [2.0 * aging_daughter_fraction(a) for a in (0, 10, 30)]
         @test issorted(r_timer) && r_timer[1] > 0.6 && last(r_timer) > 0.97
         @test all(a -> 0.0 * aging_daughter_fraction(a) == 0.0, (0, 10, 30))   # sizer pinned
+    end
+
+    # ---- prediction: lineage birth-size MEMORY is AR(1) with one pole r = α·f ----
+    # The return map Vb(n+1)=f·(αVb+β)·noise linearizes to an AR(1) process; its single pole
+    # r=α·f (α=map_slope, f=daughter fraction) sets EVERY memory observable: the lag-k
+    # autocorrelation ρ_k=r^k, the CV amplification 1/√(1−r²), and the nutrient-shift relaxation
+    # −1/ln r generations. Two of them force a single-lineage, mode-/set-point-free invariant
+    # CV(Vb)²(1−ρ1²)=cv² that recovers the intrinsic per-division noise. Mode-diagnostic memory:
+    # sizer memoryless (r=0), timer longest (r=2f). Falsification: nonzero mother→daughter
+    # birth-size correlation in a sizer, ρ1≠αf, or a mode-independent nutrient-shift relaxation.
+    @testset "prediction — birth-size memory ρ_k=r^k + CV²(1−ρ1²)=cv² + nutrient relaxation" begin
+        # closed forms: map_slope recovers α analytically; size_memory ties r to the observables
+        @test map_slope(SizerRule(40.0)) == 0.0
+        @test map_slope(AdderRule(10.0)) == 1.0
+        @test map_slope(TimerRule(2.0)) == 2.0
+        @test map_slope(LinearSizeControl(1.5, 20.0)) == 1.5
+        @test map_slope(InhibitorDilutionSizer(60.0, 1.5)) == 0.0
+
+        m_sizer = size_memory(SizerRule(40.0))                       # r = 0
+        @test m_sizer.r == 0.0 && m_sizer.cv_gain == 1.0 && m_sizer.memory_gen == 0.0
+        m_adder = size_memory(AdderRule(10.0); daughter_fraction=0.5)  # r = 0.5
+        @test m_adder.r == 0.5
+        @test isapprox(m_adder.cv_gain, 1 / sqrt(1 - 0.25); atol=1e-12)
+        @test isapprox(m_adder.memory_gen, -1 / log(0.5); atol=1e-12)
+        m_timer = size_memory(TimerRule(2.0); daughter_fraction=0.4)   # r = 0.8
+        @test m_timer.r == 0.8
+        # timer carries the longest memory; sizer the shortest (mode-diagnostic ordering)
+        @test m_sizer.memory_gen < m_adder.memory_gen < m_timer.memory_gen
+        # the boundary is singular: at r ≥ 1 (loss of homeostasis) memory/CV-gain diverge
+        @test size_memory(TimerRule(2.0); daughter_fraction=0.5).cv_gain == Inf
+        @test size_memory(TimerRule(2.0); daughter_fraction=0.5).memory_gen == Inf
+
+        # (1) Monte-Carlo lineage autocorrelation ρ_k ≈ r^k across the sizer→timer axis
+        ac(Vb, k; burn=1500) = begin
+            x = @view Vb[(burn + 1):end]
+            cor(@view(x[1:(end - k)]), @view(x[(k + 1):end]))
+        end
+        for (α, f) in ((0.0, 0.5), (1.0, 0.5), (1.6, 0.5))
+            r = α * f
+            s = simulate_lineage(
+                LinearSizeControl(α, 20.0); V0=20.0, n=40_000, cv=0.06, daughter_fraction=f, seed=3
+            )
+            @test isapprox(ac(s.Vb, 1), r; atol=0.012)        # ρ1 = r (mother→daughter)
+            @test isapprox(ac(s.Vb, 2), r^2; atol=0.012)      # ρ2 = r²
+            # (2) the single-lineage invariant recovers the intrinsic noise, mode-free
+            x = @view s.Vb[1501:end]
+            CVb = std(x) / mean(x)
+            @test isapprox(sqrt(CVb^2 * (1 - ac(s.Vb, 1)^2)), 0.06; rtol=0.02)
+        end
+        # sizer is memoryless: no mother→daughter birth-size correlation
+        s0 = simulate_lineage(
+            LinearSizeControl(0.0, 20.0); V0=20.0, n=40_000, cv=0.06, daughter_fraction=0.5, seed=3
+        )
+        @test abs(ac(s0.Vb, 1)) < 0.02
+
+        # (3) nutrient-shift step response: the deterministic mean map relaxes EXACTLY as the
+        # closed-form geometric Vb*₂+(Vb*₁−Vb*₂)·r^n (cv=0 isolates the relaxation rate).
+        fp(α, β, f) = f * β / (1 - α * f)
+        for (α, f) in ((0.0, 0.5), (1.0, 0.5), (1.6, 0.5))
+            r = α * f
+            v1, v2 = fp(α, 20.0, f), fp(α, 40.0, f)
+            s = simulate_lineage(
+                LinearSizeControl(α, 40.0); V0=v1, n=9, cv=0.0, daughter_fraction=f, seed=1
+            )
+            geom = [v2 + (v1 - v2) * r^n for n in 0:8]
+            @test all(isapprox.(s.Vb, geom; atol=1e-9))
+        end
     end
 
     # ---- L2: reference behaviour — the timer collapses, the sizer is stable ----

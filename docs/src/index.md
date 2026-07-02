@@ -62,6 +62,13 @@ saturating_timer_buds
 ```@docs
 size_control_slope
 classify_control
+map_slope
+```
+
+## Lineage birth-size memory
+
+```@docs
+size_memory
 ```
 
 ## Lineages, asymmetry, and aging

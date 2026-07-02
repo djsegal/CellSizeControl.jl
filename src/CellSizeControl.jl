@@ -47,7 +47,9 @@ export SizeControlRule,
     cell_cycle,
     lineage_timecourse,
     size_control_slope,
-    classify_control
+    classify_control,
+    map_slope,
+    size_memory
 
 # ---------------------------------------------------------------------------
 # Control rules: given the birth volume Vb, the (deterministic) division volume.
@@ -1103,6 +1105,75 @@ function classify_control(slope::Real; atol::Real=0.35)
     isapprox(slope, 1; atol=atol) && return :adder
     isapprox(slope, 2; atol=atol) && return :timer
     return :mixed
+end
+
+# ---------------------------------------------------------------------------
+# Lineage birth-size MEMORY: the return map is AR(1) with a single pole r = α·f.
+# The birth-size return map Vb(n+1) = f·(division_volume(rule,Vb(n)))·(1+cv·ξ)
+# linearizes about its fixed point to Vb(n+1) − Vb* ≈ r·(Vb(n) − Vb*) + noise, an
+# AR(1) process whose one pole r = α·f (α = the map's local slope, f the daughter
+# fraction) sets EVERY memory observable at once: the stationary CV amplification
+# 1/√(1−r²), the lag-k lineage autocorrelation ρ_k = r^k, and the nutrient-shift
+# relaxation time −1/ln r (generations). Homeostatic iff r < 1.
+# ---------------------------------------------------------------------------
+"""
+    map_slope(rule::SizeControlRule) -> Float64
+
+The ANALYTIC local slope `α = dVd/dVb` of a size-control map — the closed-form
+counterpart of the regression-based [`size_control_slope`](@ref): sizer → 0, adder → 1,
+timer → its fold, linear map → `α`. This is the `α` that, with the daughter fraction `f`,
+forms the lineage return slope `r = α·f` ([`size_memory`](@ref)).
+
+```jldoctest
+julia> map_slope(SizerRule(40.0)), map_slope(AdderRule(10.0)), map_slope(TimerRule(2.0))
+(0.0, 1.0, 2.0)
+
+julia> map_slope(LinearSizeControl(1.5, 20.0))
+1.5
+```
+"""
+map_slope(::SizerRule) = 0.0
+map_slope(::InhibitorDilutionSizer) = 0.0
+map_slope(::AdderRule) = 1.0
+map_slope(r::TimerRule) = float(r.fold)
+map_slope(r::LinearSizeControl) = r.alpha
+
+"""
+    size_memory(rule; daughter_fraction=0.5)
+        -> (; r, cv_gain, autocorr, memory_gen)
+
+Birth-size memory of a size-control lineage, all set by the single return-map pole
+`r = α·f` (`α = map_slope(rule)`, `f = daughter_fraction`). The return map is AR(1), so:
+
+  - `r` — the return slope `α·f` (homeostatic iff `r < 1`);
+  - `cv_gain = 1/√(1−r²)` — stationary birth-size CV amplification over the per-division
+    noise (the `CV(Vb) = cv/√(1−(αf)²)` law), `Inf` at/above the boundary;
+  - `autocorr = r` — the lag-1 mother→daughter birth-size correlation; the lag-`k`
+    correlation is `ρ_k = r^k` (geometric decay at the single rate `r`);
+  - `memory_gen = −1/ln r` — the nutrient-shift relaxation time in generations (`0` for a
+    sizer, which adapts in one division; `Inf` at the boundary).
+
+These force a two-observable invariant measurable from a **single** lineage, mode- and
+set-point-free: `CV(Vb)²·(1 − ρ_1²) = cv²` recovers the intrinsic per-division noise.
+
+```jldoctest
+julia> m = size_memory(AdderRule(10.0); daughter_fraction=0.5);
+
+julia> m.r, round(m.cv_gain; digits=3), round(m.memory_gen; digits=3)
+(0.5, 1.155, 1.443)
+
+julia> size_memory(SizerRule(40.0)).memory_gen        # a sizer is memoryless
+0.0
+
+julia> round(size_memory(TimerRule(2.0); daughter_fraction=0.4).memory_gen; digits=3)
+4.481
+```
+"""
+function size_memory(rule::SizeControlRule; daughter_fraction::Real=0.5)
+    r = map_slope(rule) * daughter_fraction
+    cv_gain = r >= 1 ? Inf : 1 / sqrt(1 - r^2)
+    memory_gen = r <= 0 ? 0.0 : (r >= 1 ? Inf : -1 / log(r))
+    return (; r=float(r), cv_gain, autocorr=float(r), memory_gen)
 end
 
 end # module

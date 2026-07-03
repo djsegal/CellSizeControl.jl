@@ -4,6 +4,7 @@ using Aqua
 using ExplicitImports
 using JET
 using Statistics: mean, std, cor
+using Random: MersenneTwister
 
 @testset "CellSizeControl" begin
     # ---- Q: package-quality gates (release-readiness) ----
@@ -725,6 +726,56 @@ using Statistics: mean, std, cor
         @test isapprox(m, law.mean; rtol=0.01)               # mean within 1% of prediction
         @test isapprox(sd / m, law.cv; rtol=0.02)            # CV within 2%
         @test isapprox(sk, law.skew; rtol=0.03)              # skew within 3%
+    end
+
+    # ---- CC-N/CI: BCa bootstrap confidence intervals on the newborn-size-law headlines ----
+    # The CC-N ratio/cv/skew were bare single-seed Monte-Carlo point estimates with no stated
+    # uncertainty. `size_law_ci` puts a bias-corrected-accelerated bootstrap interval on each,
+    # via the vendored `ResampleStats` kernel (provenance: tools/numerics/ResampleStats.jl). This
+    # testset is the recompose cross-check: (a) the kernel is grounded against a closed form the
+    # bootstrap must reproduce, (b) each interval's `point` reproduces the existing hand-rolled
+    # estimator exactly, and (c) the analytic closed-form headline falls inside the interval.
+    @testset "CC-N/CI — BCa intervals on the newborn-size law (vendored ResampleStats)" begin
+        # (a) KERNEL GROUNDING: for the mean, the jackknife SE equals the closed form std/√n
+        #     exactly, and the BCa point equals statistic(data). This is an identity, not a fit.
+        d = collect(1.0:64.0)
+        est, bias, se = jackknife(d, mean)
+        @test isapprox(bias, 0.0; atol=1e-12)                       # mean is linear ⇒ zero bias
+        @test isapprox(se, std(d) / sqrt(length(d)); rtol=1e-12)    # se = std/√n (closed form)
+        lo, pt, hi = bca_ci(d, mean; nboot=1000, rng=MersenneTwister(1))
+        @test pt == mean(d)                                          # point IS the sample statistic
+        @test lo < mean(d) < hi
+
+        # (a') SELF-CONSISTENCY: on symmetric data the BCa interval collapses to the plain
+        #      percentile interval (z0≈0, a≈0), so the two agree closely.
+        pb = bootstrap_ci(d, mean; nboot=1000, rng=MersenneTwister(1))
+        pc = bca_ci(d, mean; nboot=1000, rng=MersenneTwister(1))
+        @test isapprox(pb[1], pc[1]; rtol=0.02) && isapprox(pb[3], pc[3]; rtol=0.02)
+
+        # (b)+(c) the newborn-size headlines: build the Monte-Carlo sample, interval it, and
+        #     check each `point` reproduces the hand-rolled moment AND covers the closed form.
+        law = newborn_size_law(;
+            alpha0=0.32, alpha_max=0.5, tau=8.0, enlarge_max=0.45, enlarge_tau=8.0, Vstar=60.0
+        )
+        pop = simulate_population(
+            SizerRule(60.0); target=150_000, enlarge_max=0.45, enlarge_tau=8.0,
+            alpha0=0.32, alpha_max=0.5, tau=8.0, seed=1,
+        )
+        nb = pop.Vbirth[pop.age .== 0]
+        ci = size_law_ci(nb; alpha0=0.32, Vstar=60.0, nboot=2000, seed=1)
+
+        m = mean(nb)
+        @test ci.ratio[2] == m / (0.32 * 60.0)               # point reproduces hand-rolled ratio
+        @test ci.cv[2] == std(nb) / m                        # point reproduces hand-rolled CV
+        @test ci.ratio[1] < ci.ratio[2] < ci.ratio[3]        # a proper ordered interval
+        @test ci.ratio[1] < law.ratio < ci.ratio[3]          # analytic R≈1.114 inside the CI
+        @test ci.cv[1] < law.cv < ci.cv[3]                   # analytic CV inside the CI
+        @test ci.skew[1] < law.skew < ci.skew[3]             # analytic (right) skew inside the CI
+        @test ci.skew[1] > 0                                 # skew CI strictly positive (right-skewed)
+
+        # (d) DETERMINISM: same seed ⇒ identical interval (reproducible provenance).
+        ci2 = size_law_ci(nb; alpha0=0.32, Vstar=60.0, nboot=2000, seed=1)
+        @test ci.ratio == ci2.ratio && ci.cv == ci2.cv && ci.skew == ci2.skew
     end
 
     # ---- CC-X: extant-vs-newborn size divergence + the senescence age-law correction ----

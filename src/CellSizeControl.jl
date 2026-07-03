@@ -14,8 +14,13 @@ testing and `../../docs/literature/AUDIT_NOTES.md` §4 for the source grounding.
 """
 module CellSizeControl
 
-using Statistics: mean
+using Statistics: mean, std
 using Random: Random
+
+# Vendored resampling kernel (bootstrap / BCa CIs on the Monte-Carlo size-law
+# statistics); provenance header at the top of the file.
+include("ResampleStats.jl")
+using .ResampleStats: bootstrap_ci, bca_ci, jackknife
 
 export SizeControlRule,
     TimerRule,
@@ -49,7 +54,11 @@ export SizeControlRule,
     size_control_slope,
     classify_control,
     map_slope,
-    size_memory
+    size_memory,
+    size_law_ci,
+    bootstrap_ci,
+    bca_ci,
+    jackknife
 
 # ---------------------------------------------------------------------------
 # Control rules: given the birth volume Vb, the (deterministic) division volume.
@@ -851,6 +860,64 @@ function extant_size_law(;
         Vstar * sum(ws[a + 1] * enlarge(a - 1) for a in 1:max_age)
     divergence = newborn_mean > 0 ? extant_mean / newborn_mean : NaN
     return (; newborn_mean, extant_mean, divergence)
+end
+
+"""
+    size_law_ci(newborn_sizes; alpha0=0.32, Vstar=1.0, alpha=0.05, nboot=2000, seed=1)
+        -> (; ratio, cv, skew)
+
+BCa bootstrap confidence intervals for the scale-free newborn-size-law statistics from a
+Monte-Carlo newborn-size sample — the age-0 birth volumes `pop.Vbirth[pop.age .== 0]` returned
+by [`simulate_population`](@ref). Each field is a `(lo, point, hi)` triple at confidence
+`1 − alpha`:
+
+  - `ratio` — mean newborn size in units of the youngest-mother daughter, `mean / (alpha0·Vstar)`
+    (the scale-free CC-N headline ≈ 1.114 that [`newborn_size_law`](@ref) predicts in closed form);
+  - `cv`    — coefficient of variation `std / mean`;
+  - `skew`  — the (right-skewed) third standardized moment.
+
+The `point` of each triple **exactly reproduces** the plain moment estimator the analysis
+computes by hand, and the closed-form [`newborn_size_law`](@ref) value should fall inside the
+interval at large `N` — turning the bare single-seed point comparison into an interval-covered
+validation. The interval is bias-corrected and accelerated (skew-aware) via the vendored
+`ResampleStats` kernel; deterministic under `seed`.
+
+```jldoctest
+julia> pop = simulate_population(SizerRule(60.0); target=40_000, enlarge_max=0.45,
+                                 enlarge_tau=8.0, alpha0=0.32, alpha_max=0.5, tau=8.0, seed=1);
+
+julia> nb = pop.Vbirth[pop.age .== 0];
+
+julia> ci = size_law_ci(nb; alpha0=0.32, Vstar=60.0, nboot=1000, seed=1);
+
+julia> ci.ratio[1] < newborn_size_law(; alpha0=0.32, alpha_max=0.5, tau=8.0,
+                                      enlarge_max=0.45, enlarge_tau=8.0, Vstar=60.0).ratio < ci.ratio[3]
+true
+```
+"""
+function size_law_ci(
+    newborn_sizes::AbstractVector{<:Real};
+    alpha0::Real=0.32,
+    Vstar::Real=1.0,
+    alpha::Real=0.05,
+    nboot::Integer=2000,
+    seed::Integer=1,
+)
+    length(newborn_sizes) >= 2 ||
+        throw(ArgumentError("size_law_ci needs at least 2 newborn sizes"))
+    nb = float.(newborn_sizes)
+    ratio_stat(x) = mean(x) / (alpha0 * Vstar)
+    cv_stat(x) = std(x) / mean(x)
+    function skew_stat(x)
+        m = mean(x)
+        s = std(x)
+        return s > 0 ? mean(((x .- m) ./ s) .^ 3) : 0.0
+    end
+    # independent, reproducible rng streams per statistic
+    ratio = bca_ci(nb, ratio_stat; nboot, alpha, rng=Random.MersenneTwister(seed))
+    cv = bca_ci(nb, cv_stat; nboot, alpha, rng=Random.MersenneTwister(seed + 1))
+    skew = bca_ci(nb, skew_stat; nboot, alpha, rng=Random.MersenneTwister(seed + 2))
+    return (; ratio, cv, skew)
 end
 
 """

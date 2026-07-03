@@ -111,12 +111,31 @@ function main()
         end
     end
 
+    # ---- BCa bootstrap CIs on the headline scale-free statistics (ratio/cv/skew) ----
+    # The simulation row above is a single-seed point estimate; a bias-corrected-accelerated
+    # bootstrap over the newborn sample puts a 95% interval on each, and confirms the analytic
+    # closed form lands inside it. Uses CellSizeControl.size_law_ci (vendored ResampleStats).
+    ci = size_law_ci(sim.nb; alpha0=A0, Vstar=Vstar, alpha=0.05, nboot=4000, seed=1)
+    inside(c, v) = c[1] <= v <= c[3]
+    open(joinpath(HERE, "newborn_size_law_ci.csv"), "w") do io
+        println(io, "stat,analytic,sim_point,ci_lo,ci_hi,analytic_inside")
+        for (name, an, c) in
+            (("ratio", law.ratio, ci.ratio), ("cv", law.cv, ci.cv), ("skew", law.skew, ci.skew))
+            println(io, name, ",", round(an; digits=5), ",", round(c[2]; digits=5), ",",
+                round(c[1]; digits=5), ",", round(c[3]; digits=5), ",", inside(c, an))
+        end
+    end
+
     println("CC-N done (target=$target)")
     println("  analytic  : mean=$(round(law.mean;digits=3)) cv=$(round(law.cv;digits=4)) ",
         "skew=$(round(law.skew;digits=4)) ratio=$(round(law.ratio;digits=5))")
     println("  simulation: mean=$(round(sim.mean;digits=3)) cv=$(round(sim.cv;digits=4)) ",
         "skew=$(round(sim.skew;digits=4)) N0=$(sim.n0)")
-    println("wrote newborn_size_law_comb.csv + newborn_size_law.csv + newborn_size_hist.csv")
+    println("  BCa 95% CI: ratio ", round.((ci.ratio[1], ci.ratio[3]); digits=4),
+        " (analytic ", round(law.ratio; digits=4), inside(ci.ratio, law.ratio) ? " ✓in) " : " ✗out) ",
+        "| skew ", round.((ci.skew[1], ci.skew[3]); digits=3))
+    println("wrote newborn_size_law_comb.csv + newborn_size_law.csv + newborn_size_hist.csv ",
+        "+ newborn_size_law_ci.csv")
     return nothing
 end
 
